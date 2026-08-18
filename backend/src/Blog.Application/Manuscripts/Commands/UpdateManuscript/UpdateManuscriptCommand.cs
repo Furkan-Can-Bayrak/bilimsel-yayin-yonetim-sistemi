@@ -54,6 +54,11 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
             throw new ForbiddenException("Yalnızca kendi makalenizi düzenleyebilirsiniz.");
         }
 
+        if (!ManuscriptAccess.CanEditContent(manuscript, _currentUser))
+        {
+            throw new ConflictException("Bu durumdayken makale düzenlenemez.");
+        }
+
         var areaExists = await _db.ResearchAreas
             .AnyAsync(a => a.Id == request.ResearchAreaId, cancellationToken);
 

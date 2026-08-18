@@ -57,6 +57,18 @@ export class ManuscriptService {
     return this.http.post<void>(`${this.baseUrl}/${id}/unpublish`, {});
   }
 
+  submit(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/submit`, {});
+  }
+
+  accept(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/accept`, {});
+  }
+
+  reject(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/reject`, {});
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
@@ -73,8 +85,8 @@ export class ManuscriptService {
     if (query.researchAreaId != null) {
       params = params.set('researchAreaId', String(query.researchAreaId));
     }
-    if (query.isPublished != null) {
-      params = params.set('isPublished', String(query.isPublished));
+    if (query.status) {
+      params = params.set('status', query.status);
     }
 
     return params;

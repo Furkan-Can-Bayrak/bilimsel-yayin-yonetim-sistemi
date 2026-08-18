@@ -8,6 +8,7 @@ export const Permissions = {
     Update: 'Manuscript.Update',
     Delete: 'Manuscript.Delete',
     Submit: 'Manuscript.Submit',
+    Decide: 'Manuscript.Decide',
     Publish: 'Manuscript.Publish',
     Unpublish: 'Manuscript.Unpublish',
     ViewAll: 'Manuscript.ViewAll',

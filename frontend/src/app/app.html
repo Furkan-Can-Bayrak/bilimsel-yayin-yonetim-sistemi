@@ -22,6 +22,9 @@
             Makalelerim
           </a>
         }
+        @if (auth.hasPermission(Permissions.Reviews.Submit)) {
+          <a routerLink="/admin/reviews" routerLinkActive="active">Değerlendirmelerim</a>
+        }
         @if (auth.hasPermission(Permissions.Manuscripts.Create)) {
           <a routerLink="/admin/manuscripts/new" routerLinkActive="active">Yeni makale</a>
         }

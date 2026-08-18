@@ -1,6 +1,7 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Common.Models;
 using Blog.Application.Manuscripts.Dtos;
+using Blog.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +35,7 @@ public sealed class GetManuscriptsQueryHandler
 
         var query = _db.Manuscripts
             .AsNoTracking()
-            .Where(m => m.IsPublished);
+            .Where(m => m.Status == ManuscriptStatus.Published);
 
         if (request.ResearchAreaId is int researchAreaId)
         {
@@ -65,8 +66,8 @@ public sealed class GetManuscriptsQueryHandler
                 m.Author == null
                     ? string.Empty
                     : string.IsNullOrWhiteSpace(m.Author.AcademicTitle)
-                        ? m.Author.FullName
-                        : m.Author.AcademicTitle + " " + m.Author.FullName))
+                        ? m.Author.FirstName + " " + m.Author.LastName
+                        : m.Author.AcademicTitle + " " + m.Author.FirstName + " " + m.Author.LastName))
             .ToListAsync(cancellationToken);
 
         return new PagedResult<ManuscriptListItemDto>(items, page, pageSize, totalCount);

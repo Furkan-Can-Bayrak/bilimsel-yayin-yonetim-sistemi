@@ -1,8 +1,9 @@
 using Blog.Domain.Common;
+using Blog.Domain.Enums;
 
 namespace Blog.Domain.Entities;
 
-/// <summary>Bilimsel makale. Yayın durumu, yazarı ve araştırma alanı ile birlikte tutulur.</summary>
+/// <summary>Bilimsel makale. Durum makinesi, yazarı ve araştırma alanı ile birlikte tutulur.</summary>
 public sealed class Manuscript : ISoftDeletable
 {
     public int Id { get; set; }
@@ -11,7 +12,7 @@ public sealed class Manuscript : ISoftDeletable
     public string Content { get; set; } = string.Empty;
     public string? Summary { get; set; }
     public DateTime? PublishedAt { get; set; }
-    public bool IsPublished { get; set; }
+    public ManuscriptStatus Status { get; set; } = ManuscriptStatus.Draft;
     public int ResearchAreaId { get; set; }
     public ResearchArea? ResearchArea { get; set; }
 
@@ -19,31 +20,70 @@ public sealed class Manuscript : ISoftDeletable
     public int AuthorId { get; set; }
     public User? Author { get; set; }
 
+    public ICollection<Review> Reviews { get; set; } = new List<Review>();
+
     public DateTime? DeletedAtUtc { get; set; }
 
-    /// <returns>Yeni yayına alındıysa true; zaten yayındaysa false.</returns>
-    public bool Publish(DateTime utcNow)
+    public void Submit()
     {
-        if (IsPublished)
+        if (Status is not (ManuscriptStatus.Draft or ManuscriptStatus.Rejected))
         {
-            return false;
+            throw new InvalidOperationException(
+                "Yalnızca taslak veya reddedilmiş makale değerlendirmeye gönderilebilir.");
         }
 
-        IsPublished = true;
-        PublishedAt = utcNow;
-        return true;
+        Status = ManuscriptStatus.Submitted;
     }
 
-    /// <returns>Yayından alındıysa true; zaten taslaktaysa false.</returns>
-    public bool Unpublish()
+    public void AssignReviewer()
     {
-        if (!IsPublished)
+        if (Status != ManuscriptStatus.Submitted)
         {
-            return false;
+            throw new InvalidOperationException("Hakem yalnızca gönderilmiş makaleye atanabilir.");
         }
 
-        IsPublished = false;
+        Status = ManuscriptStatus.UnderReview;
+    }
+
+    public void Accept()
+    {
+        if (Status is not (ManuscriptStatus.Submitted or ManuscriptStatus.UnderReview))
+        {
+            throw new InvalidOperationException("Yalnızca gönderilmiş veya incelemedeki makale kabul edilebilir.");
+        }
+
+        Status = ManuscriptStatus.Accepted;
+    }
+
+    public void Reject()
+    {
+        if (Status is not (ManuscriptStatus.Submitted or ManuscriptStatus.UnderReview))
+        {
+            throw new InvalidOperationException("Yalnızca gönderilmiş veya incelemedeki makale reddedilebilir.");
+        }
+
+        Status = ManuscriptStatus.Rejected;
+    }
+
+    public void Publish(DateTime utcNow)
+    {
+        if (Status != ManuscriptStatus.Accepted)
+        {
+            throw new InvalidOperationException("Yalnızca kabul edilmiş makale yayınlanabilir.");
+        }
+
+        Status = ManuscriptStatus.Published;
+        PublishedAt = utcNow;
+    }
+
+    public void Unpublish()
+    {
+        if (Status != ManuscriptStatus.Published)
+        {
+            throw new InvalidOperationException("Yalnızca yayındaki makale yayından alınabilir.");
+        }
+
+        Status = ManuscriptStatus.Accepted;
         PublishedAt = null;
-        return true;
     }
 }

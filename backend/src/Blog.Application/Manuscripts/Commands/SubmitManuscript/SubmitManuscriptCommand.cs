@@ -1,0 +1,50 @@
+using Blog.Application.Common.Exceptions;
+using Blog.Application.Common.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
+namespace Blog.Application.Manuscripts.Commands.SubmitManuscript;
+
+public sealed record SubmitManuscriptCommand(int Id) : IRequest;
+
+public sealed class SubmitManuscriptCommandHandler : IRequestHandler<SubmitManuscriptCommand>
+{
+    private readonly IApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
+    private readonly INotificationService _notifications;
+
+    public SubmitManuscriptCommandHandler(
+        IApplicationDbContext db,
+        ICurrentUser currentUser,
+        INotificationService notifications)
+    {
+        _db = db;
+        _currentUser = currentUser;
+        _notifications = notifications;
+    }
+
+    public async Task Handle(SubmitManuscriptCommand request, CancellationToken cancellationToken)
+    {
+        var manuscript = await _db.Manuscripts
+            .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
+
+        if (manuscript is null)
+        {
+            throw new NotFoundException($"Makale bulunamadı: {request.Id}");
+        }
+
+        if (_currentUser.UserId != manuscript.AuthorId)
+        {
+            throw new ForbiddenException("Yalnızca kendi makalenizi gönderebilirsiniz.");
+        }
+
+        ManuscriptAccess.ApplyTransition(manuscript.Submit);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        await _notifications.NotifyAsync(
+            "Makale gönderildi",
+            $"\"{manuscript.Title}\" değerlendirmeye gönderildi.",
+            manuscript.Id,
+            cancellationToken);
+    }
+}

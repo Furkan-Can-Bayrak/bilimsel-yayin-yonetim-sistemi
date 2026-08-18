@@ -15,7 +15,8 @@ public sealed record LoginResponse(
     DateTime ExpiresAtUtc,
     int UserId,
     string Email,
-    string FullName,
+    string FirstName,
+    string LastName,
     IReadOnlyList<string> Roles,
     IReadOnlyList<string> Permissions);
 
@@ -97,7 +98,8 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
             token.ExpiresAtUtc,
             user.Id,
             user.Email,
-            user.FullName,
+            user.FirstName,
+            user.LastName,
             roleNames,
             permissions);
     }

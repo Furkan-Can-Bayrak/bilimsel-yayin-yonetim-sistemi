@@ -1,5 +1,6 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts.Dtos;
+using Blog.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +24,7 @@ public sealed class GetManuscriptBySlugQueryHandler
     {
         return await _db.Manuscripts
             .AsNoTracking()
-            .Where(m => m.IsPublished && m.Slug == request.Slug)
+            .Where(m => m.Status == ManuscriptStatus.Published && m.Slug == request.Slug)
             .Select(m => new ManuscriptDetailDto(
                 m.Id,
                 m.Title,
@@ -36,8 +37,8 @@ public sealed class GetManuscriptBySlugQueryHandler
                 m.Author == null
                     ? string.Empty
                     : string.IsNullOrWhiteSpace(m.Author.AcademicTitle)
-                        ? m.Author.FullName
-                        : m.Author.AcademicTitle + " " + m.Author.FullName))
+                        ? m.Author.FirstName + " " + m.Author.LastName
+                        : m.Author.AcademicTitle + " " + m.Author.FirstName + " " + m.Author.LastName))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

@@ -21,8 +21,19 @@ ng serve
 | http://localhost:4200 | Public makale listesi |
 | http://localhost:4200/manuscripts/:slug | Makale detay |
 | http://localhost:4200/admin/login | Yönetim girişi |
+| http://localhost:4200/admin | Editör / yazar makale listesi |
+| http://localhost:4200/admin/reviews | Hakem kuyruğu |
 
-**Demo hesap:** backend User Secrets içindeki `Seed:AdminEmail` / `Seed:AdminPassword` (Visual Studio: Blog.API → Manage User Secrets).
+**Demo hesaplar** (şifre backend `Seed:DemoPassword`, örn. `Demo123!`):
+
+| E-posta | Rol |
+|---------|-----|
+| `admin@yayin.local` | Admin |
+| `editor@yayin.local` | Editör (hakem atar, kabul/ret) |
+| `reviewer@yayin.local` | Hakem + yazar |
+| `author@yayin.local` | Yazar |
+
+`reviewer@` girişte **Değerlendirmelerim** ekranına düşer.
 
 ### API URL
 
@@ -35,7 +46,7 @@ Backend CORS politikası `AngularDev` bu origin’e izin verir (`http://localhos
 | Yol | Ne? |
 |-----|-----|
 | `src/environments/` | API base URL |
-| `src/app/core/services/` | Auth, Manuscript, ResearchArea HTTP |
+| `src/app/core/services/` | Auth, Manuscript, Review, ResearchArea HTTP |
 | `src/app/core/interceptors/` | JWT `Authorization` header |
 | `src/app/core/guards/` | Admin route koruması |
 | `src/app/features/manuscripts/` | Public liste + detay |

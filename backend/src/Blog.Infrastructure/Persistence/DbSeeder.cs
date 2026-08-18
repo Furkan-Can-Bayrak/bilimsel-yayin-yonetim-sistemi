@@ -1,5 +1,6 @@
 using Blog.Domain.Authorization;
 using Blog.Domain.Entities;
+using Blog.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +23,7 @@ public static class DbSeeder
 
         await SeedPermissionsAsync(context, cancellationToken);
         await SeedRolesAsync(context, cancellationToken);
+        await SyncSystemRolePermissionsAsync(context, cancellationToken);
         await SeedUsersAsync(context, configuration, cancellationToken);
         await SyncDevelopmentPasswordsAsync(context, configuration, cancellationToken);
         await SeedContentAsync(context, cancellationToken);
@@ -90,6 +92,54 @@ public static class DbSeeder
             }
 
             context.Roles.Add(role);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+        await GrantAllPermissionsToAdminAsync(context, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sistem rollerine kodda tanımlı eksik izinleri ekler; panelden verilen fazlalara dokunmaz.
+    /// SeedRolesAsync var olan rolleri atladığı için yeni bir sabit (ör. Decide) aksi halde
+    /// yalnızca Admin'e giderdi.
+    /// </summary>
+    private static async Task SyncSystemRolePermissionsAsync(
+        BlogDbContext context,
+        CancellationToken cancellationToken)
+    {
+        var permissionIdsByCode = await context.Permissions
+            .ToDictionaryAsync(p => p.Code, p => p.Id, cancellationToken);
+
+        var roles = await context.Roles
+            .IgnoreQueryFilters()
+            .Include(r => r.RolePermissions)
+            .Where(r => r.IsSystemRole)
+            .ToListAsync(cancellationToken);
+
+        foreach (var role in roles)
+        {
+            if (!RoleDefinitions.TryGetValue(role.Name, out var definition))
+            {
+                continue;
+            }
+
+            var grantedIds = role.RolePermissions.Select(rp => rp.PermissionId).ToHashSet();
+
+            foreach (var code in definition.PermissionCodes)
+            {
+                if (!permissionIdsByCode.TryGetValue(code, out var permissionId) ||
+                    grantedIds.Contains(permissionId))
+                {
+                    continue;
+                }
+
+                role.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = role.Id,
+                    PermissionId = permissionId
+                });
+                grantedIds.Add(permissionId);
+            }
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -184,7 +234,8 @@ public static class DbSeeder
             (
                 Email: adminEmail,
                 Password: adminPassword,
-                FullName: "Sistem Yöneticisi",
+                FirstName: "Sistem",
+                LastName: "Yöneticisi",
                 Title: (string?)null,
                 Affiliation: (string?)null,
                 Orcid: (string?)null,
@@ -193,7 +244,8 @@ public static class DbSeeder
             (
                 Email: "editor@yayin.local",
                 Password: demoPassword,
-                FullName: "Selin Aydın",
+                FirstName: "Selin",
+                LastName: "Aydın",
                 Title: (string?)"Prof. Dr.",
                 Affiliation: (string?)"İstanbul Teknik Üniversitesi",
                 Orcid: (string?)"0000-0001-2345-6789",
@@ -204,7 +256,8 @@ public static class DbSeeder
                 // çoklu rol yapısını gösteren örnek bu.
                 Email: "reviewer@yayin.local",
                 Password: demoPassword,
-                FullName: "Mert Kaya",
+                FirstName: "Mert",
+                LastName: "Kaya",
                 Title: (string?)"Doç. Dr.",
                 Affiliation: (string?)"Ege Üniversitesi",
                 Orcid: (string?)"0000-0002-3456-7890",
@@ -213,7 +266,8 @@ public static class DbSeeder
             (
                 Email: "author@yayin.local",
                 Password: demoPassword,
-                FullName: "Elif Demir",
+                FirstName: "Elif",
+                LastName: "Demir",
                 Title: (string?)"Dr. Öğr. Üyesi",
                 Affiliation: (string?)"Orta Doğu Teknik Üniversitesi",
                 Orcid: (string?)"0000-0003-4567-8901",
@@ -227,13 +281,14 @@ public static class DbSeeder
             {
                 // Login gelen adresi küçük harfe çevirdiği için burada da normalize ediyoruz.
                 Email = seedUser.Email.Trim().ToLowerInvariant(),
-                FullName = seedUser.FullName,
                 AcademicTitle = seedUser.Title,
                 Affiliation = seedUser.Affiliation,
                 Orcid = seedUser.Orcid,
                 IsActive = true,
                 CreatedAtUtc = createdAtUtc
             };
+
+            user.SetName(seedUser.FirstName, seedUser.LastName);
 
             user.PasswordHash = hasher.HashPassword(user, seedUser.Password);
 
@@ -328,7 +383,7 @@ public static class DbSeeder
                 Slug = "derin-ogrenme-ile-makale-siniflandirma",
                 Summary = "Bilimsel metinlerin araştırma alanına otomatik atanması üzerine bir çalışma.",
                 Content = "Bu örnek makale seed verisidir. Değerlendirme ve yayın akışı sonraki adımlarda genişleyecek.",
-                IsPublished = true,
+                Status = ManuscriptStatus.Published,
                 PublishedAt = DateTime.UtcNow,
                 ResearchAreaId = computerScience.Id,
                 AuthorId = author.Id
@@ -339,7 +394,7 @@ public static class DbSeeder
                 Slug = "acik-erisim-dergilerinde-hakem-atama",
                 Summary = "Hakem yükünün araştırma alanına göre dengelenmesi.",
                 Content = "Bu örnek makale, editör kararlarının ve hakem atamasının sistemde nasıl modelleneceğini gösterir.",
-                IsPublished = true,
+                Status = ManuscriptStatus.Published,
                 PublishedAt = DateTime.UtcNow,
                 ResearchAreaId = computerScience.Id,
                 AuthorId = author.Id
@@ -366,6 +421,7 @@ public static class DbSeeder
             PermissionCodes:
             [
                 Permissions.Manuscripts.ViewAll,
+                Permissions.Manuscripts.Decide,
                 Permissions.Manuscripts.Publish,
                 Permissions.Manuscripts.Unpublish,
                 Permissions.Reviews.Assign,
@@ -401,6 +457,7 @@ public static class DbSeeder
         [Permissions.Manuscripts.Update] = "Makale düzenleme",
         [Permissions.Manuscripts.Delete] = "Makale silme",
         [Permissions.Manuscripts.Submit] = "Makaleyi değerlendirmeye gönderme",
+        [Permissions.Manuscripts.Decide] = "Makaleyi kabul veya ret etme",
         [Permissions.Manuscripts.Publish] = "Makaleyi yayınlama",
         [Permissions.Manuscripts.Unpublish] = "Yayını geri alma",
         [Permissions.Manuscripts.ViewAll] = "Taslaklar dahil tüm makaleleri görme",

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthSession, LoginRequest, LoginResponse } from '../models/auth.model';
+import { AuthSession, LoginRequest, LoginResponse, displayName as formatPersonName } from '../models/auth.model';
 import { Permissions } from '../auth/permissions';
 
 const SESSION_KEY = 'byys_session';
@@ -23,13 +23,18 @@ export class AuthService {
   readonly isLoggedIn = computed(() => this.isSessionActive(this.sessionSignal()));
   readonly displayName = computed(() => {
     const session = this.sessionSignal();
-    return session?.fullName || session?.email || null;
+    return session ? formatPersonName(session.firstName, session.lastName) || session.email : null;
   });
   readonly permissions = computed(() => this.sessionSignal()?.permissions ?? []);
 
   getToken(): string | null {
     const session = this.sessionSignal();
     return this.isSessionActive(session) ? session!.accessToken : null;
+  }
+
+  userId(): number | null {
+    const session = this.sessionSignal();
+    return this.isSessionActive(session) ? session!.userId : null;
   }
 
   hasPermission(permission: string): boolean {
@@ -51,6 +56,10 @@ export class AuthService {
    * İzni yoksa public listeye düşer.
    */
   pathAfterLogin(): string {
+    if (this.hasPermission(Permissions.Reviews.Submit) &&
+        !this.hasPermission(Permissions.Manuscripts.ViewAll)) {
+      return '/admin/reviews';
+    }
     if (this.hasPermission(Permissions.Manuscripts.ViewAll) ||
         this.hasPermission(Permissions.Manuscripts.Create)) {
       return '/admin';
@@ -74,7 +83,8 @@ export class AuthService {
       expiresAtUtc: res.expiresAtUtc,
       userId: res.userId,
       email: res.email,
-      fullName: res.fullName,
+      firstName: res.firstName,
+      lastName: res.lastName,
       roles: res.roles ?? [],
       permissions: res.permissions ?? [],
     };
@@ -96,7 +106,8 @@ export class AuthService {
 
     try {
       const parsed = JSON.parse(raw) as AuthSession;
-      if (!parsed.accessToken || !Array.isArray(parsed.permissions)) {
+      if (!parsed.accessToken || !Array.isArray(parsed.permissions) ||
+          !parsed.firstName || !parsed.lastName) {
         this.clearStorage();
         return null;
       }

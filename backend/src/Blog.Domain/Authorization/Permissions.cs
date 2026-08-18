@@ -15,6 +15,7 @@ public static class Permissions
         public const string Update = "Manuscript.Update";
         public const string Delete = "Manuscript.Delete";
         public const string Submit = "Manuscript.Submit";
+        public const string Decide = "Manuscript.Decide";
         public const string Publish = "Manuscript.Publish";
         public const string Unpublish = "Manuscript.Unpublish";
 

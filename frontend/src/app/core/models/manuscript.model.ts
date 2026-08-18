@@ -1,3 +1,29 @@
+export type ManuscriptStatus =
+  | 'Draft'
+  | 'Submitted'
+  | 'UnderReview'
+  | 'Accepted'
+  | 'Rejected'
+  | 'Published';
+
+export const MANUSCRIPT_STATUS_LABELS: Record<ManuscriptStatus, string> = {
+  Draft: 'Taslak',
+  Submitted: 'Gönderildi',
+  UnderReview: 'İncelemede',
+  Accepted: 'Kabul',
+  Rejected: 'Ret',
+  Published: 'Yayında',
+};
+
+export const MANUSCRIPT_STATUSES: ManuscriptStatus[] = [
+  'Draft',
+  'Submitted',
+  'UnderReview',
+  'Accepted',
+  'Rejected',
+  'Published',
+];
+
 export interface ManuscriptListItem {
   id: number;
   title: string;
@@ -20,17 +46,30 @@ export interface ManuscriptDetail {
   authorName: string;
 }
 
+export type ReviewRecommendation = 'Accept' | 'Reject';
+
+export interface ReviewSummary {
+  id: number;
+  reviewerId: number;
+  reviewerName: string;
+  assignedAtUtc: string;
+  submittedAtUtc: string | null;
+  recommendation: ReviewRecommendation | null;
+  comments: string | null;
+}
+
 export interface AdminManuscriptListItem {
   id: number;
   title: string;
   slug: string;
   summary: string | null;
   publishedAt: string | null;
-  isPublished: boolean;
+  status: ManuscriptStatus;
   researchAreaId: number;
   researchAreaName: string;
   authorId: number;
   authorName: string;
+  currentReview: ReviewSummary | null;
 }
 
 export interface AdminManuscriptDetail {
@@ -40,11 +79,12 @@ export interface AdminManuscriptDetail {
   content: string;
   summary: string | null;
   publishedAt: string | null;
-  isPublished: boolean;
+  status: ManuscriptStatus;
   researchAreaId: number;
   researchAreaName: string;
   authorId: number;
   authorName: string;
+  currentReview: ReviewSummary | null;
 }
 
 export interface CreateManuscriptRequest {
@@ -83,7 +123,7 @@ export interface ManuscriptListQuery {
   pageSize?: number;
   search?: string;
   researchAreaId?: number | null;
-  isPublished?: boolean | null;
+  status?: ManuscriptStatus | null;
 }
 
 export interface ResearchArea {

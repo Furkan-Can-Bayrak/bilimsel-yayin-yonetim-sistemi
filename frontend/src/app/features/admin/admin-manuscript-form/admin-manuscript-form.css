@@ -23,6 +23,18 @@
   margin: 0 0 1.1rem;
 }
 
+.review-box {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 80%, white);
+}
+
+.review-box p {
+  margin: 0.35rem 0 0;
+}
+
 .form {
   display: grid;
   gap: 1rem;
@@ -68,6 +80,16 @@
   flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 0.25rem;
+  align-items: center;
+}
+
+.row select {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
 }
 
 .btn {

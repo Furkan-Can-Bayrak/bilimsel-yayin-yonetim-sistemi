@@ -38,11 +38,7 @@ public sealed class PublishManuscriptCommandHandler : IRequestHandler<PublishMan
             throw new NotFoundException($"Makale bulunamadı: {request.Id}");
         }
 
-        if (!manuscript.Publish(DateTime.UtcNow))
-        {
-            return;
-        }
-
+        ManuscriptAccess.ApplyTransition(() => manuscript.Publish(DateTime.UtcNow));
         await _db.SaveChangesAsync(cancellationToken);
 
         await ManuscriptPublication.NotifyPublishedAsync(

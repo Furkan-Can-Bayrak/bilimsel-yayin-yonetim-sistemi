@@ -20,9 +20,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(500);
 
-        builder.Property(u => u.FullName)
+        builder.Property(u => u.FirstName)
             .IsRequired()
-            .HasMaxLength(150);
+            .HasMaxLength(80);
+
+        builder.Property(u => u.LastName)
+            .IsRequired()
+            .HasMaxLength(80);
 
         builder.Property(u => u.AcademicTitle)
             .HasMaxLength(50);
@@ -47,6 +51,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique()
             .HasFilter("[Orcid] IS NOT NULL");
 
-        builder.HasQueryFilter(u => u.DeletedAtUtc == null);
+        builder.Ignore(u => u.DisplayName);
     }
 }

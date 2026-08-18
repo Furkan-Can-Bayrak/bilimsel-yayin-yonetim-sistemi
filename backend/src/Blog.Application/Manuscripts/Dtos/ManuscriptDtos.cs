@@ -1,3 +1,5 @@
+using Blog.Domain.Enums;
+
 namespace Blog.Application.Manuscripts.Dtos;
 
 public sealed record ManuscriptListItemDto(
@@ -26,11 +28,12 @@ public sealed record AdminManuscriptListItemDto(
     string Slug,
     string? Summary,
     DateTime? PublishedAt,
-    bool IsPublished,
+    ManuscriptStatus Status,
     int ResearchAreaId,
     string ResearchAreaName,
     int AuthorId,
-    string AuthorName);
+    string AuthorName,
+    ReviewSummaryDto? CurrentReview);
 
 public sealed record AdminManuscriptDetailDto(
     int Id,
@@ -39,10 +42,20 @@ public sealed record AdminManuscriptDetailDto(
     string Content,
     string? Summary,
     DateTime? PublishedAt,
-    bool IsPublished,
+    ManuscriptStatus Status,
     int ResearchAreaId,
     string ResearchAreaName,
     int AuthorId,
-    string AuthorName);
+    string AuthorName,
+    ReviewSummaryDto? CurrentReview);
+
+public sealed record ReviewSummaryDto(
+    int Id,
+    int ReviewerId,
+    string ReviewerName,
+    DateTime AssignedAtUtc,
+    DateTime? SubmittedAtUtc,
+    ReviewRecommendation? Recommendation,
+    string? Comments);
 
 public sealed record CreateManuscriptResult(int Id, string Slug);

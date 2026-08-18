@@ -26,11 +26,7 @@ public sealed class UnpublishManuscriptCommandHandler : IRequestHandler<Unpublis
             throw new NotFoundException($"Makale bulunamadı: {request.Id}");
         }
 
-        if (!manuscript.Unpublish())
-        {
-            return;
-        }
-
+        ManuscriptAccess.ApplyTransition(manuscript.Unpublish);
         await _db.SaveChangesAsync(cancellationToken);
     }
 }

@@ -69,6 +69,20 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             return true;
         }
 
+        if (exception is ConflictException conflictException)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            await httpContext.Response.WriteAsJsonAsync(
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status409Conflict,
+                    Title = "İşlem bu durumda yapılamaz",
+                    Detail = conflictException.Message
+                },
+                cancellationToken);
+            return true;
+        }
+
         return false;
     }
 }

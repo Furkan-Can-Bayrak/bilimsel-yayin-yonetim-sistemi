@@ -8,7 +8,8 @@ export interface LoginResponse {
   expiresAtUtc: string;
   userId: number;
   email: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   roles: string[];
   permissions: string[];
 }
@@ -18,7 +19,12 @@ export interface AuthSession {
   expiresAtUtc: string;
   userId: number;
   email: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   roles: string[];
   permissions: string[];
+}
+
+export function displayName(firstName: string, lastName: string): string {
+  return `${firstName} ${lastName}`.trim();
 }

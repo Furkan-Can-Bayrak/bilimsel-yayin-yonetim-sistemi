@@ -5,6 +5,8 @@ import { LoginPage } from './features/auth/login/login';
 import { AdminManuscriptList } from './features/admin/admin-manuscript-list/admin-manuscript-list';
 import { AdminManuscriptForm } from './features/admin/admin-manuscript-form/admin-manuscript-form';
 import { AdminNotifications } from './features/admin/admin-notifications/admin-notifications';
+import { AdminReviewQueue } from './features/admin/admin-review-queue/admin-review-queue';
+import { AdminReviewForm } from './features/admin/admin-review-form/admin-review-form';
 import { authGuard, permissionGuard, permissionGuardAny } from './core/guards/auth.guard';
 import { Permissions } from './core/auth/permissions';
 
@@ -30,6 +32,16 @@ export const routes: Routes = [
         path: 'manuscripts/:id/edit',
         component: AdminManuscriptForm,
         canActivate: [permissionGuard(Permissions.Manuscripts.Update)],
+      },
+      {
+        path: 'reviews',
+        component: AdminReviewQueue,
+        canActivate: [permissionGuard(Permissions.Reviews.Submit)],
+      },
+      {
+        path: 'reviews/:id',
+        component: AdminReviewForm,
+        canActivate: [permissionGuard(Permissions.Reviews.Submit)],
       },
       {
         path: 'notifications',

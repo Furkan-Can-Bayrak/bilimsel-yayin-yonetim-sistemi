@@ -2,7 +2,31 @@
   <p class="back"><a [routerLink]="backLink">← Geri</a></p>
   <h1>{{ isEdit ? 'Makaleyi düzenle' : 'Yeni makale' }}</h1>
   @if (isEdit && authorName()) {
-    <p class="muted author-line">Yazar: {{ authorName() }}</p>
+    <p class="muted author-line">
+      Yazar: {{ authorName() }}
+      · {{ statusLabels[status()] }}
+    </p>
+  }
+
+  @if (isEdit && canViewReviews && currentReview()) {
+    <aside class="review-box">
+      <strong>Hakem raporu</strong>
+      <p class="muted">{{ currentReview()!.reviewerName }}</p>
+      @if (currentReview()!.submittedAtUtc) {
+        <p>
+          {{
+            currentReview()!.recommendation
+              ? recommendationLabels[currentReview()!.recommendation!]
+              : 'Teslim edildi'
+          }}
+        </p>
+        @if (currentReview()!.comments) {
+          <p>{{ currentReview()!.comments }}</p>
+        }
+      } @else {
+        <p class="muted">Rapor bekleniyor.</p>
+      }
+    </aside>
   }
 
   @if (loading()) {
@@ -44,15 +68,41 @@
       }
 
       <div class="row">
-        <button type="submit" class="btn primary" [disabled]="submitting()">
-          {{ submitting() ? 'Kaydediliyor…' : 'Kaydet' }}
-        </button>
-        @if (isEdit && canPublish && !isPublished()) {
+        @if (canEditContent) {
+          <button type="submit" class="btn primary" [disabled]="submitting()">
+            {{ submitting() ? 'Kaydediliyor…' : 'Kaydet' }}
+          </button>
+        }
+        @if (isEdit && canSubmit) {
+          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="submitForReview()">
+            Değerlendirmeye gönder
+          </button>
+        }
+        @if (isEdit && canAssign) {
+          <select name="reviewerId" [(ngModel)]="selectedReviewerId" [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Hakem seç…</option>
+            @for (candidate of candidates(); track candidate.id) {
+              <option [ngValue]="candidate.id">{{ candidate.firstName }} {{ candidate.lastName }}</option>
+            }
+          </select>
+          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="assignReviewer()">
+            Hakem ata
+          </button>
+        }
+        @if (isEdit && canDecide) {
+          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="accept()">
+            Kabul
+          </button>
+          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="reject()">
+            Ret
+          </button>
+        }
+        @if (isEdit && canPublish) {
           <button type="button" class="btn ghost" [disabled]="submitting()" (click)="publish()">
             Yayınla
           </button>
         }
-        @if (isEdit && canUnpublish && isPublished()) {
+        @if (isEdit && canUnpublish) {
           <button type="button" class="btn ghost" [disabled]="submitting()" (click)="unpublish()">
             Yayından al
           </button>

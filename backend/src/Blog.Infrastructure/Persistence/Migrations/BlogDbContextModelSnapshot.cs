@@ -40,9 +40,6 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("DeletedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
 
@@ -53,6 +50,9 @@ namespace Blog.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(220)
                         .HasColumnType("nvarchar(220)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("Summary")
                         .HasMaxLength(500)
@@ -72,6 +72,8 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.HasIndex("Slug")
                         .IsUnique()
                         .HasFilter("[DeletedAtUtc] IS NULL");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("Manuscripts", (string)null);
                 });
@@ -165,6 +167,45 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.ToTable("ResearchAreas", (string)null);
                 });
 
+            modelBuilder.Entity("Blog.Domain.Entities.Review", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("ManuscriptId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Recommendation")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReviewerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManuscriptId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Reviews_OpenAssignment")
+                        .HasFilter("[SubmittedAtUtc] IS NULL");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.ToTable("Reviews", (string)null);
+                });
+
             modelBuilder.Entity("Blog.Domain.Entities.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -239,13 +280,18 @@ namespace Blog.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("FullName")
+                    b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
 
                     b.Property<string>("Orcid")
                         .HasMaxLength(19)
@@ -306,6 +352,25 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.Navigation("ResearchArea");
                 });
 
+            modelBuilder.Entity("Blog.Domain.Entities.Review", b =>
+                {
+                    b.HasOne("Blog.Domain.Entities.Manuscript", "Manuscript")
+                        .WithMany("Reviews")
+                        .HasForeignKey("ManuscriptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Blog.Domain.Entities.User", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Manuscript");
+
+                    b.Navigation("Reviewer");
+                });
+
             modelBuilder.Entity("Blog.Domain.Entities.RolePermission", b =>
                 {
                     b.HasOne("Blog.Domain.Entities.Permission", "Permission")
@@ -342,6 +407,11 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Blog.Domain.Entities.Manuscript", b =>
+                {
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("Blog.Domain.Entities.Permission", b =>

@@ -1,11 +1,19 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ResearchArea } from '../../../core/models/manuscript.model';
+import { Observable } from 'rxjs';
+import {
+  MANUSCRIPT_STATUS_LABELS,
+  ManuscriptStatus,
+  ResearchArea,
+  ReviewSummary,
+} from '../../../core/models/manuscript.model';
+import { REVIEW_RECOMMENDATION_LABELS, ReviewerCandidate } from '../../../core/models/review.model';
 import { Permissions } from '../../../core/auth/permissions';
 import { AuthService } from '../../../core/services/auth.service';
 import { ResearchAreaService } from '../../../core/services/research-area.service';
 import { ManuscriptService } from '../../../core/services/manuscript.service';
+import { ReviewService } from '../../../core/services/review.service';
 
 @Component({
   selector: 'app-admin-manuscript-form',
@@ -17,17 +25,24 @@ export class AdminManuscriptForm implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly manuscriptsApi = inject(ManuscriptService);
   private readonly researchAreasApi = inject(ResearchAreaService);
+  private readonly reviewsApi = inject(ReviewService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  readonly statusLabels = MANUSCRIPT_STATUS_LABELS;
+  readonly recommendationLabels = REVIEW_RECOMMENDATION_LABELS;
   readonly researchAreas = signal<ResearchArea[]>([]);
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly editId = signal<number | null>(null);
-  readonly isPublished = signal(false);
+  readonly status = signal<ManuscriptStatus>('Draft');
   readonly authorName = signal<string | null>(null);
+  readonly authorId = signal<number | null>(null);
+  readonly currentReview = signal<ReviewSummary | null>(null);
+  readonly candidates = signal<ReviewerCandidate[]>([]);
+  selectedReviewerId: number | null = null;
 
   readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
@@ -47,12 +62,49 @@ export class AdminManuscriptForm implements OnInit {
       : '/';
   }
 
+  get canEditContent(): boolean {
+    if (!this.isEdit) {
+      return true;
+    }
+
+    if (this.auth.hasPermission(Permissions.Manuscripts.ViewAll) &&
+        this.auth.hasPermission(Permissions.Manuscripts.Update)) {
+      return true;
+    }
+
+    return this.status() === 'Draft' || this.status() === 'Rejected';
+  }
+
+  get isOwn(): boolean {
+    const authorId = this.authorId();
+    return authorId != null && this.auth.userId() === authorId;
+  }
+
+  get canSubmit(): boolean {
+    return this.auth.hasPermission(Permissions.Manuscripts.Submit) &&
+      this.isOwn &&
+      (this.status() === 'Draft' || this.status() === 'Rejected');
+  }
+
+  get canDecide(): boolean {
+    return this.auth.hasPermission(Permissions.Manuscripts.Decide) &&
+      (this.status() === 'Submitted' || this.status() === 'UnderReview');
+  }
+
+  get canAssign(): boolean {
+    return this.auth.hasPermission(Permissions.Reviews.Assign) && this.status() === 'Submitted';
+  }
+
+  get canViewReviews(): boolean {
+    return this.auth.hasPermission(Permissions.Reviews.ViewAll);
+  }
+
   get canPublish(): boolean {
-    return this.auth.hasPermission(Permissions.Manuscripts.Publish);
+    return this.auth.hasPermission(Permissions.Manuscripts.Publish) && this.status() === 'Accepted';
   }
 
   get canUnpublish(): boolean {
-    return this.auth.hasPermission(Permissions.Manuscripts.Unpublish);
+    return this.auth.hasPermission(Permissions.Manuscripts.Unpublish) && this.status() === 'Published';
   }
 
   ngOnInit(): void {
@@ -81,7 +133,7 @@ export class AdminManuscriptForm implements OnInit {
   }
 
   submit(): void {
-    if (this.form.invalid) {
+    if (!this.canEditContent || this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -118,27 +170,55 @@ export class AdminManuscriptForm implements OnInit {
     }
   }
 
-  publish(): void {
+  submitForReview(): void {
+    this.runWorkflow(this.manuscriptsApi.submit.bind(this.manuscriptsApi), 'Gönderildi', 'Submitted');
+  }
+
+  accept(): void {
+    this.runWorkflow(this.manuscriptsApi.accept.bind(this.manuscriptsApi), 'Kabul edildi', 'Accepted');
+  }
+
+  reject(): void {
+    this.runWorkflow(this.manuscriptsApi.reject.bind(this.manuscriptsApi), 'Reddedildi', 'Rejected');
+  }
+
+  assignReviewer(): void {
     const id = this.editId();
-    if (!id) {
+    const reviewerId = this.selectedReviewerId;
+    if (!id || !reviewerId) {
+      this.error.set('Hakem seçin.');
       return;
     }
 
     this.submitting.set(true);
     this.error.set(null);
-    this.manuscriptsApi.publish(id).subscribe({
+    this.reviewsApi.assign(id, reviewerId).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.isPublished.set(true);
+        this.status.set('UnderReview');
+        this.applyLock();
+        this.loadManuscript(id);
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        this.error.set(this.readError(err) ?? 'Yayınlama başarısız.');
+        this.error.set(this.readError(err) ?? 'Hakem atanamadı.');
       },
     });
   }
 
+  publish(): void {
+    this.runWorkflow(this.manuscriptsApi.publish.bind(this.manuscriptsApi), 'Yayınlandı', 'Published');
+  }
+
   unpublish(): void {
+    this.runWorkflow(this.manuscriptsApi.unpublish.bind(this.manuscriptsApi), 'Yayından alındı', 'Accepted');
+  }
+
+  private runWorkflow(
+    action: (id: number) => Observable<void>,
+    okFallback: string,
+    nextStatus: ManuscriptStatus,
+  ): void {
     const id = this.editId();
     if (!id) {
       return;
@@ -146,14 +226,15 @@ export class AdminManuscriptForm implements OnInit {
 
     this.submitting.set(true);
     this.error.set(null);
-    this.manuscriptsApi.unpublish(id).subscribe({
+    action(id).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.isPublished.set(false);
+        this.status.set(nextStatus);
+        this.applyLock();
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        this.error.set(this.readError(err) ?? 'Yayından alma başarısız.');
+        this.error.set(this.readError(err) ?? okFallback + ' işlemi başarısız.');
       },
     });
   }
@@ -168,15 +249,31 @@ export class AdminManuscriptForm implements OnInit {
           content: manuscript.content,
           researchAreaId: manuscript.researchAreaId,
         });
-        this.isPublished.set(manuscript.isPublished);
+        this.status.set(manuscript.status);
         this.authorName.set(manuscript.authorName);
+        this.authorId.set(manuscript.authorId);
+        this.currentReview.set(manuscript.currentReview);
+        this.applyLock();
         this.loading.set(false);
+        if (this.canAssign) {
+          this.reviewsApi.getCandidates(id).subscribe({
+            next: (candidates) => this.candidates.set(candidates),
+          });
+        }
       },
       error: () => {
         this.error.set('Makale bulunamadı.');
         this.loading.set(false);
       },
     });
+  }
+
+  private applyLock(): void {
+    if (this.canEditContent) {
+      this.form.enable();
+    } else {
+      this.form.disable();
+    }
   }
 
   private readError(err: unknown): string | null {

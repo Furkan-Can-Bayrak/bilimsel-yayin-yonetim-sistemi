@@ -4,9 +4,9 @@
       <h1>{{ isEditorPanel ? 'Makale yönetimi' : 'Makalelerim' }}</h1>
       <p class="lead">
         @if (isEditorPanel) {
-          Taslakları inceleyin, yayın durumunu güncelleyin ve kayıtları düzenleyin.
+          Taslakları inceleyin, hakem atayın, raporlara bakıp kabul veya ret verin.
         } @else {
-          Taslaklarınızı kaydedin; yayına alma editörün işidir.
+          Taslaklarınızı kaydedin, ardından değerlendirmeye gönderin.
         }
       </p>
     </div>
@@ -41,10 +41,11 @@
 
     <label class="field">
       <span>Durum</span>
-      <select name="publishedFilter" [(ngModel)]="publishedFilter">
+      <select name="statusFilter" [(ngModel)]="statusFilter">
         <option value="">Tümü</option>
-        <option value="true">Yayında</option>
-        <option value="false">Taslak</option>
+        @for (status of statusOptions; track status) {
+          <option [ngValue]="status">{{ statusLabels[status] }}</option>
+        }
       </select>
     </label>
 
@@ -85,9 +86,27 @@
               <td>{{ manuscript.authorName || '—' }}</td>
               <td>{{ manuscript.researchAreaName }}</td>
               <td>
-                <span class="badge" [class.on]="manuscript.isPublished">
-                  {{ manuscript.isPublished ? 'Yayında' : 'Taslak' }}
+                <span class="badge" [class]="'badge badge-' + manuscript.status">
+                  {{ statusLabels[manuscript.status] }}
                 </span>
+                @if (canViewReviews && manuscript.currentReview) {
+                  <div class="review-meta">
+                    Hakem: {{ manuscript.currentReview.reviewerName }}
+                    @if (manuscript.currentReview.submittedAtUtc) {
+                      ·
+                      {{
+                        manuscript.currentReview.recommendation
+                          ? recommendationLabels[manuscript.currentReview.recommendation]
+                          : 'Rapor var'
+                      }}
+                      @if (manuscript.currentReview.comments) {
+                        <span class="review-comments">{{ manuscript.currentReview.comments }}</span>
+                      }
+                    } @else {
+                      · rapor bekleniyor
+                    }
+                  </div>
+                }
               </td>
               <td>
                 @if (manuscript.publishedAt) {
@@ -97,22 +116,71 @@
                 }
               </td>
               <td class="actions">
-                @if (canPublish && !manuscript.isPublished) {
+                @if (canSubmit && isOwn(manuscript) && (manuscript.status === 'Draft' || manuscript.status === 'Rejected')) {
                   <button
                     type="button"
                     class="btn ghost"
                     [disabled]="busyId() === manuscript.id"
-                    (click)="togglePublish(manuscript)"
+                    (click)="submitForReview(manuscript)"
+                  >
+                    Gönder
+                  </button>
+                }
+                @if (canAssign && manuscript.status === 'Submitted') {
+                  <div class="assign">
+                    <select
+                      [name]="'reviewer-' + manuscript.id"
+                      [(ngModel)]="selectedReviewerId[manuscript.id]"
+                    >
+                      <option [ngValue]="null">Hakem seç…</option>
+                      @for (candidate of candidatesByManuscript()[manuscript.id] ?? []; track candidate.id) {
+                        <option [ngValue]="candidate.id">{{ candidate.firstName }} {{ candidate.lastName }}</option>
+                      }
+                    </select>
+                    <button
+                      type="button"
+                      class="btn ghost"
+                      [disabled]="busyId() === manuscript.id"
+                      (click)="assign(manuscript)"
+                    >
+                      Ata
+                    </button>
+                  </div>
+                }
+                @if (canDecide && (manuscript.status === 'Submitted' || manuscript.status === 'UnderReview')) {
+                  <button
+                    type="button"
+                    class="btn ghost"
+                    [disabled]="busyId() === manuscript.id"
+                    (click)="accept(manuscript)"
+                  >
+                    Kabul
+                  </button>
+                  <button
+                    type="button"
+                    class="btn ghost"
+                    [disabled]="busyId() === manuscript.id"
+                    (click)="reject(manuscript)"
+                  >
+                    Ret
+                  </button>
+                }
+                @if (canPublish && manuscript.status === 'Accepted') {
+                  <button
+                    type="button"
+                    class="btn ghost"
+                    [disabled]="busyId() === manuscript.id"
+                    (click)="publish(manuscript)"
                   >
                     Yayınla
                   </button>
                 }
-                @if (canUnpublish && manuscript.isPublished) {
+                @if (canUnpublish && manuscript.status === 'Published') {
                   <button
                     type="button"
                     class="btn ghost"
                     [disabled]="busyId() === manuscript.id"
-                    (click)="togglePublish(manuscript)"
+                    (click)="unpublish(manuscript)"
                   >
                     Yayından al
                   </button>

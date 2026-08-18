@@ -13,6 +13,7 @@ public interface IApplicationDbContext
     DbSet<Permission> Permissions { get; }
     DbSet<UserRole> UserRoles { get; }
     DbSet<RolePermission> RolePermissions { get; }
+    DbSet<Review> Reviews { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

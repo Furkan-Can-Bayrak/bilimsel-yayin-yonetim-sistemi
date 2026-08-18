@@ -25,7 +25,8 @@ public sealed class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(ClaimTypes.Name, user.Email),
-            new(AppClaimTypes.FullName, user.FullName),
+            new(AppClaimTypes.FirstName, user.FirstName),
+            new(AppClaimTypes.LastName, user.LastName),
             new(AppClaimTypes.SecurityVersion, user.SecurityVersion.ToString())
         };
 

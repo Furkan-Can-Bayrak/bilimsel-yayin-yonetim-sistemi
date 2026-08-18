@@ -1,6 +1,8 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Common.Models;
 using Blog.Application.Manuscripts.Dtos;
+using Blog.Domain.Authorization;
+using Blog.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +13,7 @@ public sealed record GetAdminManuscriptsQuery(
     int PageSize = 10,
     string? Search = null,
     int? ResearchAreaId = null,
-    bool? IsPublished = null) : IRequest<PagedResult<AdminManuscriptListItemDto>>;
+    ManuscriptStatus? Status = null) : IRequest<PagedResult<AdminManuscriptListItemDto>>;
 
 public sealed class GetAdminManuscriptsQueryHandler
     : IRequestHandler<GetAdminManuscriptsQuery, PagedResult<AdminManuscriptListItemDto>>
@@ -42,9 +44,9 @@ public sealed class GetAdminManuscriptsQueryHandler
             query = query.Where(m => m.ResearchAreaId == researchAreaId);
         }
 
-        if (request.IsPublished is bool isPublished)
+        if (request.Status is ManuscriptStatus status)
         {
-            query = query.Where(m => m.IsPublished == isPublished);
+            query = query.Where(m => m.Status == status);
         }
 
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -56,6 +58,7 @@ public sealed class GetAdminManuscriptsQueryHandler
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
+        var includeReview = _currentUser.HasPermission(Permissions.Reviews.ViewAll);
 
         var items = await query
             .OrderByDescending(m => m.Id)
@@ -67,15 +70,32 @@ public sealed class GetAdminManuscriptsQueryHandler
                 m.Slug,
                 m.Summary,
                 m.PublishedAt,
-                m.IsPublished,
+                m.Status,
                 m.ResearchAreaId,
                 m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
                 m.AuthorId,
                 m.Author == null
                     ? string.Empty
                     : string.IsNullOrWhiteSpace(m.Author.AcademicTitle)
-                        ? m.Author.FullName
-                        : m.Author.AcademicTitle + " " + m.Author.FullName))
+                        ? m.Author.FirstName + " " + m.Author.LastName
+                        : m.Author.AcademicTitle + " " + m.Author.FirstName + " " + m.Author.LastName,
+                includeReview
+                    ? m.Reviews
+                        .OrderByDescending(r => r.AssignedAtUtc)
+                        .Select(r => new ReviewSummaryDto(
+                            r.Id,
+                            r.ReviewerId,
+                            r.Reviewer == null
+                                ? string.Empty
+                                : string.IsNullOrWhiteSpace(r.Reviewer.AcademicTitle)
+                                    ? r.Reviewer.FirstName + " " + r.Reviewer.LastName
+                                    : r.Reviewer.AcademicTitle + " " + r.Reviewer.FirstName + " " + r.Reviewer.LastName,
+                            r.AssignedAtUtc,
+                            r.SubmittedAtUtc,
+                            r.Recommendation,
+                            r.Comments))
+                        .FirstOrDefault()
+                    : null))
             .ToListAsync(cancellationToken);
 
         return new PagedResult<AdminManuscriptListItemDto>(items, page, pageSize, totalCount);

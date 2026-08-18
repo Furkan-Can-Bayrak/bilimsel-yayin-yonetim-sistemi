@@ -12,5 +12,7 @@ public static class AppClaimTypes
     /// <summary>Token üretilirken kullanıcının <c>SecurityVersion</c> değeri.</summary>
     public const string SecurityVersion = "security_version";
 
-    public const string FullName = "full_name";
+    public const string FirstName = "first_name";
+
+    public const string LastName = "last_name";
 }

@@ -1,7 +1,10 @@
 using Blog.API.Infrastructure.Authorization;
+using Blog.Application.Manuscripts.Commands.AcceptManuscript;
 using Blog.Application.Manuscripts.Commands.CreateManuscript;
 using Blog.Application.Manuscripts.Commands.DeleteManuscript;
 using Blog.Application.Manuscripts.Commands.PublishManuscript;
+using Blog.Application.Manuscripts.Commands.RejectManuscript;
+using Blog.Application.Manuscripts.Commands.SubmitManuscript;
 using Blog.Application.Manuscripts.Commands.UnpublishManuscript;
 using Blog.Application.Manuscripts.Commands.UpdateManuscript;
 using Blog.Application.Manuscripts.Queries.GetAdminManuscripts;
@@ -9,6 +12,7 @@ using Blog.Application.Manuscripts.Queries.GetManuscriptById;
 using Blog.Application.Manuscripts.Queries.GetManuscriptBySlug;
 using Blog.Application.Manuscripts.Queries.GetManuscripts;
 using Blog.Domain.Authorization;
+using Blog.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,11 +55,11 @@ public class ManuscriptsController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] string? search = null,
         [FromQuery] int? researchAreaId = null,
-        [FromQuery] bool? isPublished = null,
+        [FromQuery] ManuscriptStatus? status = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(
-            new GetAdminManuscriptsQuery(page, pageSize, search, researchAreaId, isPublished),
+            new GetAdminManuscriptsQuery(page, pageSize, search, researchAreaId, status),
             cancellationToken);
         return Ok(result);
     }
@@ -102,6 +106,30 @@ public class ManuscriptsController : ControllerBase
                 body.Slug),
             cancellationToken);
 
+        return NoContent();
+    }
+
+    [HasPermission(Permissions.Manuscripts.Submit)]
+    [HttpPost("{id:int}/submit")]
+    public async Task<IActionResult> Submit(int id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new SubmitManuscriptCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    [HasPermission(Permissions.Manuscripts.Decide)]
+    [HttpPost("{id:int}/accept")]
+    public async Task<IActionResult> Accept(int id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new AcceptManuscriptCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    [HasPermission(Permissions.Manuscripts.Decide)]
+    [HttpPost("{id:int}/reject")]
+    public async Task<IActionResult> Reject(int id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new RejectManuscriptCommand(id), cancellationToken);
         return NoContent();
     }
 

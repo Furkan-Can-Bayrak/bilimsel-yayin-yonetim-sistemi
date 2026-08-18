@@ -1,0 +1,65 @@
+<section class="page form-page">
+  <p class="back"><a routerLink="/admin/reviews">← Değerlendirmelerim</a></p>
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (!review()) {
+    <p class="error">{{ error() || 'Değerlendirme bulunamadı.' }}</p>
+  } @else {
+    <h1>{{ review()!.manuscriptTitle }}</h1>
+    <p class="muted author-line">
+      @if (isSubmitted) {
+        Rapor teslim edildi
+      } @else {
+        Makaleyi okuyun, öneri ve gerekçe bırakın. Karar yetkisi editördedir.
+      }
+    </p>
+
+    @if (review()!.manuscriptSummary) {
+      <p class="summary">{{ review()!.manuscriptSummary }}</p>
+    }
+
+    <article class="manuscript">{{ review()!.manuscriptContent }}</article>
+
+    <form class="form" (ngSubmit)="submit()">
+      <fieldset [disabled]="isSubmitted || submitting()">
+        <legend>Öneri</legend>
+        @for (option of options; track option) {
+          <label class="choice">
+            <input
+              type="radio"
+              name="recommendation"
+              [value]="option"
+              [(ngModel)]="recommendation"
+            />
+            {{ recommendationLabels[option] }}
+          </label>
+        }
+      </fieldset>
+
+      <label>
+        Gerekçe
+        <textarea
+          name="comments"
+          rows="6"
+          maxlength="4000"
+          [(ngModel)]="comments"
+          [disabled]="isSubmitted || submitting()"
+        ></textarea>
+      </label>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <div class="row">
+        @if (!isSubmitted) {
+          <button type="submit" class="btn primary" [disabled]="submitting()">
+            {{ submitting() ? 'Gönderiliyor…' : 'Raporu teslim et' }}
+          </button>
+        }
+        <a routerLink="/admin/reviews" class="btn ghost">Listeye dön</a>
+      </div>
+    </form>
+  }
+</section>

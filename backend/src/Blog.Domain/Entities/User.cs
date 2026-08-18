@@ -14,8 +14,9 @@ public sealed class User : ISoftDeletable
 
     public string PasswordHash { get; set; } = string.Empty;
 
-    /// <summary>Makalelerde yazar olarak görünen ad.</summary>
-    public string FullName { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+
+    public string LastName { get; set; } = string.Empty;
 
     /// <summary>Akademik unvan, ör. "Prof. Dr.", "Dr. Öğr. Üyesi".</summary>
     public string? AcademicTitle { get; set; }
@@ -39,4 +40,23 @@ public sealed class User : ISoftDeletable
     public DateTime? DeletedAtUtc { get; set; }
 
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
+    /// <summary>Unvansız görünen ad. Sorguda kullanma; EF bunu SQL'e çevirmez.</summary>
+    public string DisplayName => $"{FirstName} {LastName}".Trim();
+
+    public void SetName(string firstName, string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+        {
+            throw new ArgumentException("Ad zorunludur.", nameof(firstName));
+        }
+
+        if (string.IsNullOrWhiteSpace(lastName))
+        {
+            throw new ArgumentException("Soyad zorunludur.", nameof(lastName));
+        }
+
+        FirstName = firstName.Trim();
+        LastName = lastName.Trim();
+    }
 }

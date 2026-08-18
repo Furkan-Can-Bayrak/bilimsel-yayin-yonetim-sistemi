@@ -26,11 +26,16 @@ public class ManuscriptConfiguration : IEntityTypeConfiguration<Manuscript>
         builder.Property(m => m.Summary)
             .HasMaxLength(500);
 
+        builder.Property(m => m.Status)
+            .HasConversion<int>()
+            .IsRequired();
+
         builder.HasIndex(m => m.Slug)
             .IsUnique()
             .HasFilter("[DeletedAtUtc] IS NULL");
 
         builder.HasIndex(m => m.AuthorId);
+        builder.HasIndex(m => m.Status);
 
         builder.HasOne(m => m.ResearchArea)
             .WithMany(a => a.Manuscripts)

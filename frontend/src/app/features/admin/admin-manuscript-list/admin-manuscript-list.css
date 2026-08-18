@@ -139,9 +139,55 @@ tr:last-child td {
   color: #5c5346;
 }
 
-.badge.on {
+.badge-Published {
   background: #d7ebe3;
   color: #0f6e56;
+}
+
+.badge-Accepted {
+  background: #dce8f5;
+  color: #1d4f91;
+}
+
+.badge-Submitted {
+  background: #efe4c8;
+  color: #6b4f12;
+}
+
+.badge-UnderReview {
+  background: #e4dcf3;
+  color: #4b3480;
+}
+
+.review-meta {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: normal;
+  max-width: 16rem;
+}
+
+.review-comments {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--body);
+}
+
+.assign {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.assign select {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface) 85%, white);
+  color: var(--ink);
 }
 
 .actions {

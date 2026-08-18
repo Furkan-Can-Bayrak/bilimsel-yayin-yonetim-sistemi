@@ -1,0 +1,57 @@
+<section class="page admin-page">
+  <header class="admin-head">
+    <div>
+      <h1>Değerlendirmelerim</h1>
+      <p class="lead">Size atanan makaleleri okuyun, kabul veya ret önerisi bırakın. Nihai karar editördedir.</p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (items().length === 0) {
+    <p class="muted">Henüz size atanmış bir makale yok.</p>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Makale</th>
+            <th>Durum</th>
+            <th>Atama</th>
+            <th>Rapor</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr>
+              <td>
+                <strong>{{ item.manuscriptTitle }}</strong>
+              </td>
+              <td>
+                <span class="badge" [class]="'badge badge-' + item.manuscriptStatus">
+                  {{ statusLabels[item.manuscriptStatus] }}
+                </span>
+              </td>
+              <td>{{ item.assignedAtUtc | date: 'd MMM y' }}</td>
+              <td>
+                @if (item.submittedAtUtc) {
+                  {{ item.recommendation ? recommendationLabels[item.recommendation] : 'Teslim edildi' }}
+                } @else {
+                  Bekliyor
+                }
+              </td>
+              <td class="actions">
+                <a [routerLink]="['/admin/reviews', item.id]" class="btn ghost">
+                  {{ item.submittedAtUtc ? 'Görüntüle' : 'Değerlendir' }}
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

@@ -65,9 +65,16 @@ Visual Studio: **Blog.API** sağ tık → **Manage User Secrets**. Bu dosya `%AP
 |--------|------|------|
 | POST | `/api/auth/login` | Anonim |
 | GET | `/api/manuscripts?page&pageSize&search&researchAreaId`, `/api/manuscripts/{slug}` | Anonim |
-| GET | `/api/manuscripts/admin?page&pageSize&search&researchAreaId&isPublished`, `/api/manuscripts/admin/{id}` | Giriş; ViewAll ise tümü, değilse kendi makaleleri |
-| POST | `/api/manuscripts/{id}/publish` | `Manuscript.Publish` |
-| POST | `/api/manuscripts/{id}/unpublish` | `Manuscript.Unpublish` |
+| GET | `/api/manuscripts/admin?page&pageSize&search&researchAreaId&status`, `/api/manuscripts/admin/{id}` | Giriş; ViewAll ise tümü, değilse kendi makaleleri |
+| POST | `/api/manuscripts/{id}/submit` | `Manuscript.Submit` (yazar) |
+| POST | `/api/manuscripts/{id}/accept`, `/api/manuscripts/{id}/reject` | `Manuscript.Decide` |
+| POST | `/api/manuscripts/{id}/publish` | `Manuscript.Publish` (yalnızca Accepted) |
+| POST | `/api/manuscripts/{id}/unpublish` | `Manuscript.Unpublish` (Published → Accepted) |
+| GET | `/api/reviews/candidates?manuscriptId` | `Review.Assign` |
+| POST | `/api/reviews` | `Review.Assign` |
+| GET | `/api/reviews/mine` | `Review.Submit` |
+| GET | `/api/reviews/{id}` | Atanan hakem veya `Review.ViewAll` |
+| POST | `/api/reviews/{id}/submit` | `Review.Submit` |
 | GET | `/api/notifications` | `Notification.View` |
 | POST | `/api/notifications/{id}/read` | `Notification.View` |
 | POST/PUT/DELETE | `/api/manuscripts`… | İlgili `Manuscript.*` izinleri |
