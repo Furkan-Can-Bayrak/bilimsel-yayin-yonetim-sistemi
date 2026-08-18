@@ -1,0 +1,63 @@
+.page {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.back {
+  margin: 0 0 1.75rem;
+}
+
+.back a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.back a:hover {
+  color: var(--accent);
+}
+
+article header {
+  margin-bottom: 2rem;
+}
+
+.meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(1.85rem, 4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+}
+
+.summary {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--body);
+  line-height: 1.5;
+}
+
+.content {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--body);
+  white-space: pre-wrap;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: #9b2c2c;
+  background: #fff5f5;
+  padding: 1rem;
+  border-radius: 4px;
+}

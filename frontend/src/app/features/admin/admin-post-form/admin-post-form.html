@@ -1,0 +1,56 @@
+<section class="page form-page">
+  <p class="back"><a routerLink="/admin">← Yazı listesi</a></p>
+  <h1>{{ isEdit ? 'Yazıyı düzenle' : 'Yeni yazı' }}</h1>
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else {
+    <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Başlık
+        <input type="text" formControlName="title" />
+      </label>
+
+      <label>
+        Slug (boş bırakırsan backend üretir)
+        <input type="text" formControlName="slug" placeholder="ornek-yazi" />
+      </label>
+
+      <label>
+        Özet
+        <textarea formControlName="summary" rows="2"></textarea>
+      </label>
+
+      <label>
+        İçerik
+        <textarea formControlName="content" rows="10"></textarea>
+      </label>
+
+      <label>
+        Kategori
+        <select formControlName="categoryId">
+          <option [ngValue]="0" disabled>Seç…</option>
+          @for (cat of categories(); track cat.id) {
+            <option [ngValue]="cat.id">{{ cat.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" formControlName="isPublished" />
+        Yayınla (kapalıysa taslak)
+      </label>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <div class="row">
+        <button type="submit" class="btn primary" [disabled]="submitting()">
+          {{ submitting() ? 'Kaydediliyor…' : 'Kaydet' }}
+        </button>
+        <a routerLink="/admin" class="btn ghost">İptal</a>
+      </div>
+    </form>
+  }
+</section>

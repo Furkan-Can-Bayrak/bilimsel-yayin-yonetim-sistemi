@@ -1,0 +1,59 @@
+.login-page {
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.login-page h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(1.6rem, 4vw, 2rem);
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+
+.lead {
+  color: var(--muted);
+  margin: 0 0 1.5rem;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--body);
+}
+
+.form input {
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.form button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #9b1c1c;
+  margin: 0;
+}

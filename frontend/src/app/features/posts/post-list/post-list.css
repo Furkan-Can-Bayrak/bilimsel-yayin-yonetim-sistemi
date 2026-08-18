@@ -1,0 +1,184 @@
+.page {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.hero {
+  margin-bottom: 1.75rem;
+}
+
+.brand {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 0.75rem;
+}
+
+.hero h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+}
+
+.lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 10rem;
+}
+
+.field.grow {
+  flex: 1 1 14rem;
+}
+
+.field span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.field input,
+.field select {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface) 85%, white);
+  color: var(--ink);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.55rem 0.85rem;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.result-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.post-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.post-list li {
+  border-top: 1px solid var(--line);
+}
+
+.post-list li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.post-link {
+  display: block;
+  padding: 1.35rem 0;
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.15s ease;
+}
+
+.post-link:hover h2 {
+  color: var(--accent);
+}
+
+.post-link h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+  color: var(--ink);
+}
+
+.meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.summary {
+  margin: 0;
+  color: var(--body);
+  line-height: 1.55;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.75rem;
+}
+
+.pager-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: #9b2c2c;
+  background: #fff5f5;
+  padding: 1rem;
+  border-radius: 4px;
+}

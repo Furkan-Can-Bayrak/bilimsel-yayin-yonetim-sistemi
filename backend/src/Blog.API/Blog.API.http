@@ -1,0 +1,104 @@
+@Blog.API_HostAddress = http://localhost:5254
+
+### Login (JWT al)
+POST {{Blog.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin123!"
+}
+
+###
+
+GET {{Blog.API_HostAddress}}/api/health
+Accept: application/json
+
+###
+
+GET {{Blog.API_HostAddress}}/api/posts
+Accept: application/json
+
+###
+
+GET {{Blog.API_HostAddress}}/api/posts/merhaba-blog
+Accept: application/json
+
+###
+
+@token = PASTE_TOKEN_HERE
+
+POST {{Blog.API_HostAddress}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Korunan yazı",
+  "content": "Bu endpoint JWT ister.",
+  "summary": "Auth test",
+  "categoryId": 1,
+  "isPublished": true,
+  "slug": null
+}
+
+###
+
+PUT {{Blog.API_HostAddress}}/api/posts/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Merhaba Blog (güncellendi)",
+  "content": "Güncellenmiş içerik.",
+  "summary": "Özet",
+  "categoryId": 1,
+  "isPublished": true,
+  "slug": null
+}
+
+###
+
+DELETE {{Blog.API_HostAddress}}/api/posts/99
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### Categories (public)
+GET {{Blog.API_HostAddress}}/api/categories
+Accept: application/json
+
+###
+
+GET {{Blog.API_HostAddress}}/api/categories/1
+Accept: application/json
+
+###
+
+POST {{Blog.API_HostAddress}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Teknoloji",
+  "slug": null
+}
+
+###
+
+PUT {{Blog.API_HostAddress}}/api/categories/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Teknoloji (güncel)",
+  "slug": null
+}
+
+###
+
+DELETE {{Blog.API_HostAddress}}/api/categories/2
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###

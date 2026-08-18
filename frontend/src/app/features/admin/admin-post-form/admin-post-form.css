@@ -1,0 +1,105 @@
+.form-page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.back {
+  margin: 0 0 0.75rem;
+}
+
+.back a {
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.form-page h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(1.5rem, 3vw, 1.9rem);
+  margin: 0 0 1.25rem;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--body);
+}
+
+.form input,
+.form textarea,
+.form select {
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.form textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.check {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  grid-template-columns: none;
+}
+
+.check input {
+  width: auto;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: #9b1c1c;
+  margin: 0;
+}

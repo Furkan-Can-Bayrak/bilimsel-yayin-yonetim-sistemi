@@ -1,0 +1,136 @@
+<section class="page admin-page">
+  <header class="admin-head">
+    <div>
+      <h1>Yazı yönetimi</h1>
+      <p class="lead">Oluştur, düzenle, yayınla / taslağa al, sil</p>
+    </div>
+    <div class="admin-actions">
+      <a routerLink="/admin/posts/new" class="btn primary">Yeni yazı</a>
+      <a routerLink="/admin/notifications" class="btn ghost">Bildirimler</a>
+    </div>
+  </header>
+
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label class="field grow">
+      <span>Ara</span>
+      <input
+        type="search"
+        name="search"
+        [(ngModel)]="search"
+        placeholder="Başlık veya özet…"
+      />
+    </label>
+
+    <label class="field">
+      <span>Kategori</span>
+      <select name="categoryId" [(ngModel)]="categoryId">
+        <option [ngValue]="null">Tümü</option>
+        @for (cat of categories(); track cat.id) {
+          <option [ngValue]="cat.id">{{ cat.name }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Durum</span>
+      <select name="publishedFilter" [(ngModel)]="publishedFilter">
+        <option value="">Tümü</option>
+        <option value="true">Yayında</option>
+        <option value="false">Taslak</option>
+      </select>
+    </label>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn primary">Filtrele</button>
+      <button type="button" class="btn ghost" (click)="clearFilters()">Temizle</button>
+    </div>
+  </form>
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (posts().length === 0) {
+    <p class="muted">Sonuç bulunamadı.</p>
+  } @else {
+    <p class="result-meta">{{ totalCount() }} yazı · sayfa {{ page() }} / {{ totalPages() }}</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Başlık</th>
+            <th>Kategori</th>
+            <th>Durum</th>
+            <th>Tarih</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (post of posts(); track post.id) {
+            <tr>
+              <td>
+                <strong>{{ post.title }}</strong>
+                <div class="slug">{{ post.slug }}</div>
+              </td>
+              <td>{{ post.categoryName }}</td>
+              <td>
+                <span class="badge" [class.on]="post.isPublished">
+                  {{ post.isPublished ? 'Yayında' : 'Taslak' }}
+                </span>
+              </td>
+              <td>
+                @if (post.publishedAt) {
+                  {{ post.publishedAt | date: 'd MMM y' }}
+                } @else {
+                  —
+                }
+              </td>
+              <td class="actions">
+                <button
+                  type="button"
+                  class="btn ghost"
+                  [disabled]="busyId() === post.id"
+                  (click)="togglePublish(post)"
+                >
+                  {{ post.isPublished ? 'Taslağa al' : 'Yayınla' }}
+                </button>
+                <a [routerLink]="['/admin/posts', post.id, 'edit']" class="btn ghost">Düzenle</a>
+                <button
+                  type="button"
+                  class="btn danger"
+                  [disabled]="busyId() === post.id"
+                  (click)="remove(post)"
+                >
+                  Sil
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <nav class="pager" aria-label="Sayfalama">
+        <button
+          type="button"
+          class="btn ghost"
+          [disabled]="!hasPrevious()"
+          (click)="goToPage(page() - 1)"
+        >
+          Önceki
+        </button>
+        <span class="pager-label">{{ page() }} / {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="btn ghost"
+          [disabled]="!hasNext()"
+          (click)="goToPage(page() + 1)"
+        >
+          Sonraki
+        </button>
+      </nav>
+    }
+  }
+</section>

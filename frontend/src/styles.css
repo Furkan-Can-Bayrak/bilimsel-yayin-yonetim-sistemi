@@ -1,0 +1,35 @@
+/* Global stiller — tüm sayfalar */
+
+:root {
+  --ink: #1a2332;
+  --body: #3a4556;
+  --muted: #6b7789;
+  --accent: #0f6e56;
+  --paper: #eef2f0;
+  --line: #d5ddd8;
+  --surface: #f7f9f8;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, #d8ebe3 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, #dce4f0 0%, transparent 50%),
+    var(--paper);
+  color: var(--ink);
+}
+
+a {
+  color: var(--accent);
+}

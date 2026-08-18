@@ -1,0 +1,11 @@
+# Kök seviye — backend/ ve frontend/ kendi .gitignore dosyalarını kullanır.
+
+## IDE
+.vs/
+.idea/
+*.user
+*.swp
+
+## OS
+.DS_Store
+Thumbs.db
