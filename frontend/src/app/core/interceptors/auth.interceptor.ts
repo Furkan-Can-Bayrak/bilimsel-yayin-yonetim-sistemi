@@ -1,21 +1,29 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Her HTTP isteğine Authorization: Bearer <token> ekler (varsa).
- * Laravel middleware gibi düşün — request çıkmadan önce header eklenir.
+ * Token varsa Authorization ekler.
+ * 401 (süresi dolmuş / security_version değişmiş token) oturumu kapatır.
+ * 403'e dokunmaz: kullanıcı giriş yapmıştır, yalnızca o işlem yasaktır.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = inject(AuthService).getToken();
+  const auth = inject(AuthService);
+  const token = auth.getToken();
 
-  if (!token) {
-    return next(req);
-  }
+  const outgoing = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
 
-  return next(
-    req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` },
+  return next(outgoing).pipe(
+    catchError((err: HttpErrorResponse) => {
+      const isLogin = req.url.includes('/auth/login');
+      if (err.status === 401 && !isLogin && auth.isLoggedIn()) {
+        auth.logout();
+      }
+
+      return throwError(() => err);
     }),
   );
 };

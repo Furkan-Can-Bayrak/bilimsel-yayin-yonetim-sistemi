@@ -4,6 +4,6 @@ public sealed record NotificationDto(
     int Id,
     string Title,
     string Message,
-    int? RelatedPostId,
+    int? RelatedManuscriptId,
     DateTime CreatedAtUtc,
     bool IsRead);

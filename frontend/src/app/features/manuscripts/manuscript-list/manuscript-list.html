@@ -1,0 +1,89 @@
+<section class="page">
+  <header class="hero">
+    <p class="kicker">BYYS arşivi</p>
+    <h1>Yayınlanan makaleler</h1>
+    <p class="lead">Değerlendirmesi tamamlanmış ve yayına alınmış bilimsel çalışmalar.</p>
+  </header>
+
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label class="field grow">
+      <span>Ara</span>
+      <input
+        type="search"
+        name="search"
+        [(ngModel)]="search"
+        placeholder="Başlık veya özet"
+      />
+    </label>
+
+    <label class="field">
+      <span>Araştırma alanı</span>
+      <select name="researchAreaId" [(ngModel)]="researchAreaId">
+        <option [ngValue]="null">Tüm alanlar</option>
+        @for (area of researchAreas(); track area.id) {
+          <option [ngValue]="area.id">{{ area.name }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn primary">Filtrele</button>
+      <button type="button" class="btn ghost" (click)="clearFilters()">Temizle</button>
+    </div>
+  </form>
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (manuscripts().length === 0) {
+    <p class="muted">Bu ölçütlere uyan yayın bulunamadı.</p>
+  } @else {
+    <p class="result-meta">{{ totalCount() }} yayın · sayfa {{ page() }} / {{ totalPages() }}</p>
+
+    <ul class="manuscript-list">
+      @for (manuscript of manuscripts(); track manuscript.id) {
+        <li>
+          <a [routerLink]="['/manuscripts', manuscript.slug]" class="item">
+            <h2>{{ manuscript.title }}</h2>
+            <p class="meta">
+              @if (manuscript.authorName) {
+                <span>{{ manuscript.authorName }}</span>
+                <span>·</span>
+              }
+              <span>{{ manuscript.researchAreaName }}</span>
+              @if (manuscript.publishedAt) {
+                <span>· {{ manuscript.publishedAt | date: 'd MMM y' }}</span>
+              }
+            </p>
+            @if (manuscript.summary) {
+              <p class="summary">{{ manuscript.summary }}</p>
+            }
+          </a>
+        </li>
+      }
+    </ul>
+
+    @if (totalPages() > 1) {
+      <nav class="pager" aria-label="Sayfalama">
+        <button
+          type="button"
+          class="btn ghost"
+          [disabled]="!hasPrevious()"
+          (click)="goToPage(page() - 1)"
+        >
+          Önceki
+        </button>
+        <span class="pager-label">{{ page() }} / {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="btn ghost"
+          [disabled]="!hasNext()"
+          (click)="goToPage(page() + 1)"
+        >
+          Sonraki
+        </button>
+      </nav>
+    }
+  }
+</section>

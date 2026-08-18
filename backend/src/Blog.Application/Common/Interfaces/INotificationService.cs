@@ -2,5 +2,5 @@ namespace Blog.Application.Common.Interfaces;
 
 public interface INotificationService
 {
-    Task NotifyAsync(string title, string message, int? relatedPostId = null, CancellationToken cancellationToken = default);
+    Task NotifyAsync(string title, string message, int? relatedManuscriptId = null, CancellationToken cancellationToken = default);
 }

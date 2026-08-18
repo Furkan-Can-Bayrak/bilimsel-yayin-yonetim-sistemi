@@ -1,19 +1,52 @@
 <div class="shell">
   <header class="top">
-    <a routerLink="/" class="logo">Blog</a>
-    <nav class="nav">
-      <a routerLink="/">Yazılar</a>
+    <a routerLink="/" class="brand">
+      <span class="mark">BYYS</span>
+      <span class="brand-copy">
+        <span class="brand-name">Bilimsel Yayın Yönetim Sistemi</span>
+        <span class="brand-sub">Makale değerlendirme ve yayın</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Ana menü">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        Makaleler
+      </a>
       @if (auth.isLoggedIn()) {
-        <a routerLink="/admin">Admin</a>
-        <a routerLink="/admin/notifications">Bildirimler</a>
-        <span class="user">{{ auth.username() }}</span>
-        <button type="button" class="linkish" (click)="logout()">Çıkış</button>
+        @if (auth.hasPermission(Permissions.Manuscripts.ViewAll)) {
+          <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            Editör paneli
+          </a>
+        } @else if (auth.hasPermission(Permissions.Manuscripts.Create)) {
+          <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            Makalelerim
+          </a>
+        }
+        @if (auth.hasPermission(Permissions.Manuscripts.Create)) {
+          <a routerLink="/admin/manuscripts/new" routerLinkActive="active">Yeni makale</a>
+        }
+        @if (auth.hasPermission(Permissions.Notifications.View)) {
+          <a routerLink="/admin/notifications" routerLinkActive="active">Bildirimler</a>
+        }
+        <span class="session">
+          <span class="user">{{ auth.displayName() }}</span>
+          <button type="button" class="linkish" (click)="logout()">Çıkış</button>
+        </span>
       } @else {
-        <a routerLink="/admin/login">Giriş</a>
+        <a routerLink="/admin/login" routerLinkActive="active" class="login-link">Giriş</a>
       }
     </nav>
   </header>
+
   <main>
     <router-outlet />
   </main>
+
+  <footer class="foot">
+    <span>BYYS</span>
+    <span class="sep" aria-hidden="true">·</span>
+    <span>Bilimsel Yayın Yönetim Sistemi</span>
+    <span class="sep" aria-hidden="true">·</span>
+    <span>{{ year }}</span>
+  </footer>
 </div>

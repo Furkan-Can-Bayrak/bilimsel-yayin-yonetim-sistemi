@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Blog.Application.Common.Authorization;
 using Blog.Application.Common.Interfaces;
 using Blog.Domain.Entities;
 using Microsoft.Extensions.Options;
@@ -17,15 +18,20 @@ public sealed class JwtTokenService : IJwtTokenService
         _settings = settings.Value;
     }
 
-    public string CreateToken(User user)
+    public AccessToken CreateToken(User user, IReadOnlyList<string> roles, IReadOnlyList<string> permissions)
     {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.UniqueName, user.Username),
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role)
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new(ClaimTypes.Name, user.Email),
+            new(AppClaimTypes.FullName, user.FullName),
+            new(AppClaimTypes.SecurityVersion, user.SecurityVersion.ToString())
         };
+
+        // Roller görüntüleme amaçlı, izinler yetki kararı için.
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        claims.AddRange(permissions.Select(code => new Claim(AppClaimTypes.Permission, code)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -38,6 +44,8 @@ public sealed class JwtTokenService : IJwtTokenService
             expires: expires,
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var value = new JwtSecurityTokenHandler().WriteToken(token);
+
+        return new AccessToken(value, expires);
     }
 }

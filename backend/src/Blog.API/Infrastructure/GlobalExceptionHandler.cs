@@ -55,6 +55,20 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             return true;
         }
 
+        if (exception is ForbiddenException forbiddenException)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await httpContext.Response.WriteAsJsonAsync(
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "Bu işlem için yetkiniz yok",
+                    Detail = forbiddenException.Message
+                },
+                cancellationToken);
+            return true;
+        }
+
         return false;
     }
 }

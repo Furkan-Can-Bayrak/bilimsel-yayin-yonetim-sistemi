@@ -1,51 +1,79 @@
-.login-page {
-  max-width: 26rem;
-  margin: 0 auto;
-  padding: 2.5rem 1.25rem 4rem;
+.login-wrap {
+  display: grid;
+  place-items: start center;
+  padding: 3rem 1.25rem 4rem;
 }
 
-.login-page h1 {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: clamp(1.6rem, 4vw, 2rem);
+.card {
+  width: min(26.5rem, 100%);
+  padding: 1.75rem 1.6rem 1.4rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.kicker {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+}
+
+.card h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.55rem, 3vw, 1.9rem);
   font-weight: 600;
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.4rem;
 }
 
 .lead {
   color: var(--muted);
-  margin: 0 0 1.5rem;
+  margin: 0 0 1.4rem;
+  line-height: 1.45;
 }
 
 .form {
   display: grid;
-  gap: 1rem;
+  gap: 0.95rem;
 }
 
 .form label {
   display: grid;
   gap: 0.35rem;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
+  font-weight: 600;
   color: var(--body);
 }
 
 .form input {
   font: inherit;
-  padding: 0.65rem 0.75rem;
+  font-weight: 400;
+  padding: 0.7rem 0.8rem;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface);
+  border-radius: 4px;
+  background: #fff;
   color: var(--ink);
+}
+
+.form input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 35%, white);
+  border-color: var(--accent);
 }
 
 .form button {
   font: inherit;
   font-weight: 600;
-  padding: 0.7rem 1rem;
+  padding: 0.75rem 1rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   background: var(--accent);
   color: #fff;
   cursor: pointer;
+}
+
+.form button:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
 
 .form button:disabled {
@@ -53,7 +81,60 @@
   cursor: not-allowed;
 }
 
+.hint,
 .error {
-  color: #9b1c1c;
   margin: 0;
+  font-size: 0.88rem;
+}
+
+.hint {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.back {
+  margin: 1.15rem 0 0;
+}
+
+.back a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.back a:hover {
+  color: var(--accent);
+}
+
+.demo {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.demo p {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.demo ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  line-height: 1.55;
+}
+
+.demo-password {
+  margin: 0.55rem 0 0 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
 }

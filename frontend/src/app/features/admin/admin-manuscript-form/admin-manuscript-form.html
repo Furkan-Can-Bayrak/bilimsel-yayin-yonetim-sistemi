@@ -1,0 +1,64 @@
+<section class="page form-page">
+  <p class="back"><a [routerLink]="backLink">← Geri</a></p>
+  <h1>{{ isEdit ? 'Makaleyi düzenle' : 'Yeni makale' }}</h1>
+  @if (isEdit && authorName()) {
+    <p class="muted author-line">Yazar: {{ authorName() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else {
+    <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Başlık
+        <input type="text" formControlName="title" />
+      </label>
+
+      <label>
+        Kalıcı bağlantı
+        <input type="text" formControlName="slug" placeholder="otomatik üretilir" />
+      </label>
+
+      <label>
+        Özet
+        <textarea formControlName="summary" rows="2"></textarea>
+      </label>
+
+      <label>
+        İçerik
+        <textarea formControlName="content" rows="10"></textarea>
+      </label>
+
+      <label>
+        Araştırma alanı
+        <select formControlName="researchAreaId">
+          <option [ngValue]="0" disabled>Seç…</option>
+          @for (area of researchAreas(); track area.id) {
+            <option [ngValue]="area.id">{{ area.name }}</option>
+          }
+        </select>
+      </label>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <div class="row">
+        <button type="submit" class="btn primary" [disabled]="submitting()">
+          {{ submitting() ? 'Kaydediliyor…' : 'Kaydet' }}
+        </button>
+        @if (isEdit && canPublish && !isPublished()) {
+          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="publish()">
+            Yayınla
+          </button>
+        }
+        @if (isEdit && canUnpublish && isPublished()) {
+          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="unpublish()">
+            Yayından al
+          </button>
+        }
+        <a [routerLink]="backLink" class="btn ghost">İptal</a>
+      </div>
+    </form>
+  }
+</section>

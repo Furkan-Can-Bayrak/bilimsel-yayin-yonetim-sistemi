@@ -31,7 +31,7 @@ public sealed class GetNotificationsQueryHandler
                 n.Id,
                 n.Title,
                 n.Message,
-                n.RelatedPostId,
+                n.RelatedManuscriptId,
                 n.CreatedAtUtc,
                 n.IsRead))
             .ToListAsync(cancellationToken);

@@ -6,16 +6,16 @@
 
 ## Özellikler
 
-- Public: yazı / kategori listesi ve detay (anonim)
-- Admin: JWT ile yazı/kategori CRUD + `GET /api/posts/admin` (taslaklar dahil)
-- Yazı yayınlanınca: uygulama içi bildirim + e-posta (dev’de log)
-- Admin bildirim listesi: `GET /api/notifications`
-- Seed (Development): kategori **Genel**, örnek yazılar, admin kullanıcı (şifre User Secrets içindeki `Seed:AdminPassword`)
+- Public: makale / araştırma alanı listesi ve detay (anonim)
+- Yönetim: izin tabanlı JWT ile makale ve araştırma alanı CRUD + `GET /api/manuscripts/admin` (taslaklar dahil)
+- Makale yayınlanınca: uygulama içi bildirim + e-posta (dev’de log)
+- Bildirim listesi: `GET /api/notifications`
+- Seed (Development): araştırma alanı **Bilgisayar Bilimleri**, örnek makaleler, demo kullanıcılar (şifre User Secrets)
 
 ## Gereksinimler
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- MSSQL (`BlogDb`) — Windows Auth veya connection string
+- MSSQL (`BYYS`) — Windows Auth veya connection string
 
 ## Kurulum
 
@@ -27,8 +27,10 @@ dotnet restore
 # Local secret'lar (proje klasöründe değil; GitHub'a gitmez)
 # Visual Studio: Blog.API sağ tık → Manage User Secrets
 dotnet user-secrets set "Jwt:Key" "REPLACE_WITH_YOUR_OWN_LONG_RANDOM_JWT_KEY_MIN_32" --project src/Blog.API
-dotnet user-secrets set "Seed:AdminUsername" "admin" --project src/Blog.API
+dotnet user-secrets set "Seed:AdminEmail" "admin@yayin.local" --project src/Blog.API
 dotnet user-secrets set "Seed:AdminPassword" "change-me-local-only" --project src/Blog.API
+# Development'ta her açılışta yönetici dahil dört seed hesabı bu şifreye eşitlenir
+dotnet user-secrets set "Seed:DemoPassword" "change-me-local-only" --project src/Blog.API
 
 dotnet ef database update --project src/Blog.Infrastructure --startup-project src/Blog.API
 dotnet run --project src/Blog.API
@@ -62,13 +64,15 @@ Visual Studio: **Blog.API** sağ tık → **Manage User Secrets**. Bu dosya `%AP
 | Method | Path | Auth |
 |--------|------|------|
 | POST | `/api/auth/login` | Anonim |
-| GET | `/api/posts?page&pageSize&search&categoryId`, `/api/posts/{slug}` | Anonim |
-| GET | `/api/posts/admin?page&pageSize&search&categoryId&isPublished`, `/api/posts/admin/{id}` | JWT |
-| GET | `/api/notifications` | JWT |
-| POST | `/api/notifications/{id}/read` | JWT |
-| POST/PUT/DELETE | `/api/posts`… | JWT |
-| GET | `/api/categories`… | Anonim |
-| POST/PUT/DELETE | `/api/categories`… | JWT |
+| GET | `/api/manuscripts?page&pageSize&search&researchAreaId`, `/api/manuscripts/{slug}` | Anonim |
+| GET | `/api/manuscripts/admin?page&pageSize&search&researchAreaId&isPublished`, `/api/manuscripts/admin/{id}` | Giriş; ViewAll ise tümü, değilse kendi makaleleri |
+| POST | `/api/manuscripts/{id}/publish` | `Manuscript.Publish` |
+| POST | `/api/manuscripts/{id}/unpublish` | `Manuscript.Unpublish` |
+| GET | `/api/notifications` | `Notification.View` |
+| POST | `/api/notifications/{id}/read` | `Notification.View` |
+| POST/PUT/DELETE | `/api/manuscripts`… | İlgili `Manuscript.*` izinleri |
+| GET | `/api/research-areas`… | Anonim |
+| POST/PUT/DELETE | `/api/research-areas`… | `ResearchArea.Manage` |
 
 Swagger’da **Authorize** → `Bearer <token>`.
 

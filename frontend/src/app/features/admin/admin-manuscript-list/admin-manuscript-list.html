@@ -1,0 +1,162 @@
+<section class="page admin-page">
+  <header class="admin-head">
+    <div>
+      <h1>{{ isEditorPanel ? 'Makale yönetimi' : 'Makalelerim' }}</h1>
+      <p class="lead">
+        @if (isEditorPanel) {
+          Taslakları inceleyin, yayın durumunu güncelleyin ve kayıtları düzenleyin.
+        } @else {
+          Taslaklarınızı kaydedin; yayına alma editörün işidir.
+        }
+      </p>
+    </div>
+    <div class="admin-actions">
+      @if (canCreate) {
+        <a routerLink="/admin/manuscripts/new" class="btn primary">Yeni makale</a>
+      }
+      <a routerLink="/admin/notifications" class="btn ghost">Bildirimler</a>
+    </div>
+  </header>
+
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label class="field grow">
+      <span>Ara</span>
+      <input
+        type="search"
+        name="search"
+        [(ngModel)]="search"
+        placeholder="Başlık veya özet…"
+      />
+    </label>
+
+    <label class="field">
+      <span>Araştırma alanı</span>
+      <select name="researchAreaId" [(ngModel)]="researchAreaId">
+        <option [ngValue]="null">Tümü</option>
+        @for (area of researchAreas(); track area.id) {
+          <option [ngValue]="area.id">{{ area.name }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Durum</span>
+      <select name="publishedFilter" [(ngModel)]="publishedFilter">
+        <option value="">Tümü</option>
+        <option value="true">Yayında</option>
+        <option value="false">Taslak</option>
+      </select>
+    </label>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn primary">Filtrele</button>
+      <button type="button" class="btn ghost" (click)="clearFilters()">Temizle</button>
+    </div>
+  </form>
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (manuscripts().length === 0) {
+    <p class="muted">Sonuç bulunamadı.</p>
+  } @else {
+    <p class="result-meta">{{ totalCount() }} makale · sayfa {{ page() }} / {{ totalPages() }}</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Başlık</th>
+            <th>Yazar</th>
+            <th>Alan</th>
+            <th>Durum</th>
+            <th>Tarih</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (manuscript of manuscripts(); track manuscript.id) {
+            <tr>
+              <td>
+                <strong>{{ manuscript.title }}</strong>
+                <div class="slug">{{ manuscript.slug }}</div>
+              </td>
+              <td>{{ manuscript.authorName || '—' }}</td>
+              <td>{{ manuscript.researchAreaName }}</td>
+              <td>
+                <span class="badge" [class.on]="manuscript.isPublished">
+                  {{ manuscript.isPublished ? 'Yayında' : 'Taslak' }}
+                </span>
+              </td>
+              <td>
+                @if (manuscript.publishedAt) {
+                  {{ manuscript.publishedAt | date: 'd MMM y' }}
+                } @else {
+                  —
+                }
+              </td>
+              <td class="actions">
+                @if (canPublish && !manuscript.isPublished) {
+                  <button
+                    type="button"
+                    class="btn ghost"
+                    [disabled]="busyId() === manuscript.id"
+                    (click)="togglePublish(manuscript)"
+                  >
+                    Yayınla
+                  </button>
+                }
+                @if (canUnpublish && manuscript.isPublished) {
+                  <button
+                    type="button"
+                    class="btn ghost"
+                    [disabled]="busyId() === manuscript.id"
+                    (click)="togglePublish(manuscript)"
+                  >
+                    Yayından al
+                  </button>
+                }
+                @if (canUpdate) {
+                  <a [routerLink]="['/admin/manuscripts', manuscript.id, 'edit']" class="btn ghost">Düzenle</a>
+                }
+                @if (canDelete) {
+                  <button
+                    type="button"
+                    class="btn danger"
+                    [disabled]="busyId() === manuscript.id"
+                    (click)="remove(manuscript)"
+                  >
+                    Sil
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <nav class="pager" aria-label="Sayfalama">
+        <button
+          type="button"
+          class="btn ghost"
+          [disabled]="!hasPrevious()"
+          (click)="goToPage(page() - 1)"
+        >
+          Önceki
+        </button>
+        <span class="pager-label">{{ page() }} / {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="btn ghost"
+          [disabled]="!hasNext()"
+          (click)="goToPage(page() + 1)"
+        >
+          Sonraki
+        </button>
+      </nav>
+    }
+  }
+</section>

@@ -2,9 +2,11 @@
   <header class="admin-head">
     <div>
       <h1>Bildirimler</h1>
-      <p class="lead">Yazı yayınlandığında oluşan uygulama içi kayıtlar</p>
+      <p class="lead">Yayın kararları ve sistem olayları.</p>
     </div>
-    <a routerLink="/admin" class="btn ghost">Yazılara dön</a>
+    @if (canViewAll) {
+      <a routerLink="/admin" class="btn ghost">Makale listesine dön</a>
+    }
   </header>
 
   @if (loading()) {
@@ -12,7 +14,7 @@
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (items().length === 0) {
-    <p class="muted">Henüz bildirim yok. Bir yazıyı yayınlayınca burada görünür.</p>
+    <p class="muted">Henüz bildirim yok. Bir makaleyi yayınlayınca burada görünür.</p>
   } @else {
     <ul class="list">
       @for (item of items(); track item.id) {

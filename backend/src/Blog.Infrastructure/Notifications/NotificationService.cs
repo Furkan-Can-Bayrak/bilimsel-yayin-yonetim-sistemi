@@ -15,14 +15,14 @@ public sealed class NotificationService : INotificationService
     public async Task NotifyAsync(
         string title,
         string message,
-        int? relatedPostId = null,
+        int? relatedManuscriptId = null,
         CancellationToken cancellationToken = default)
     {
         _db.Notifications.Add(new Notification
         {
             Title = title,
             Message = message,
-            RelatedPostId = relatedPostId,
+            RelatedManuscriptId = relatedManuscriptId,
             CreatedAtUtc = DateTime.UtcNow,
             IsRead = false
         });

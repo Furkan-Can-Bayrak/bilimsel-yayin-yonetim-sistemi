@@ -1,11 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -16,15 +18,16 @@ export class LoginPage {
 
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
+  readonly showDemoAccounts = !environment.production;
 
   readonly form = this.fb.nonNullable.group({
-    username: ['admin', Validators.required],
-    password: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
   constructor() {
     if (this.auth.isLoggedIn()) {
-      void this.router.navigateByUrl('/admin');
+      void this.router.navigateByUrl(this.auth.pathAfterLogin());
     }
   }
 
@@ -40,12 +43,25 @@ export class LoginPage {
     this.auth.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.submitting.set(false);
-        void this.router.navigateByUrl('/admin');
+        void this.router.navigateByUrl(this.auth.pathAfterLogin());
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.submitting.set(false);
-        this.error.set('Giriş başarısız. Kullanıcı adı / şifre kontrol et.');
+        this.error.set(this.readError(err));
       },
     });
+  }
+
+  private readError(err: HttpErrorResponse): string {
+    const detail = err.error?.detail;
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail;
+    }
+
+    if (err.status === 0) {
+      return 'Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.';
+    }
+
+    return 'E-posta veya şifre hatalı.';
   }
 }

@@ -1,7 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { Permissions } from '../../../core/auth/permissions';
 import { AppNotification } from '../../../core/models/notification.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
@@ -12,6 +14,9 @@ import { NotificationService } from '../../../core/services/notification.service
 })
 export class AdminNotifications implements OnInit {
   private readonly api = inject(NotificationService);
+  private readonly auth = inject(AuthService);
+
+  readonly canViewAll = this.auth.hasPermission(Permissions.Manuscripts.ViewAll);
 
   readonly items = signal<AppNotification[]>([]);
   readonly loading = signal(true);

@@ -1,0 +1,31 @@
+<section class="page">
+  <p class="back">
+    <a routerLink="/">← Tüm yayınlar</a>
+  </p>
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (manuscript(); as item) {
+    <article>
+      <header>
+        <p class="meta">
+          @if (item.authorName) {
+            <span>{{ item.authorName }}</span>
+            <span>·</span>
+          }
+          <span>{{ item.researchAreaName }}</span>
+          @if (item.publishedAt) {
+            <span>· {{ item.publishedAt | date: 'd MMMM y' }}</span>
+          }
+        </p>
+        <h1>{{ item.title }}</h1>
+        @if (item.summary) {
+          <p class="summary">{{ item.summary }}</p>
+        }
+      </header>
+      <div class="content">{{ item.content }}</div>
+    </article>
+  }
+</section>

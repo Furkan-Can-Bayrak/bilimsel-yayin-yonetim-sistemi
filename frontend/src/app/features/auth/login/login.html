@@ -1,24 +1,53 @@
-<section class="page login-page">
-  <h1>Admin giriş</h1>
-  <p class="lead">JWT almak için giriş yap. Development hesabı backend User Secrets içindeki Seed bilgileriyle oluşturulur.</p>
+<section class="login-wrap">
+  <div class="card">
+    <p class="kicker">BYYS</p>
+    <h1>Hesabınıza giriş yapın</h1>
+    <p class="lead">Yazar, hakem ve editör işlemleri için kurumsal e-posta adresinizi kullanın.</p>
 
-  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
-    <label>
-      Kullanıcı adı
-      <input type="text" formControlName="username" autocomplete="username" />
-    </label>
+    <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        E-posta
+        <input
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          placeholder="ad.soyad@kurum.edu.tr"
+        />
+      </label>
 
-    <label>
-      Şifre
-      <input type="password" formControlName="password" autocomplete="current-password" />
-    </label>
+      <label>
+        Şifre
+        <input type="password" formControlName="password" autocomplete="current-password" />
+      </label>
 
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <p class="hint">Geçerli bir e-posta adresi girin.</p>
+      }
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <button type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Giriş yapılıyor…' : 'Giriş yap' }}
+      </button>
+    </form>
+
+    <p class="back">
+      <a routerLink="/">← Yayınlanan makalelere dön</a>
+    </p>
+
+    @if (showDemoAccounts) {
+      <aside class="demo">
+        <p>Geliştirme hesapları</p>
+        <ul>
+          <li>Yönetici · admin@yayin.local</li>
+          <li>Editör · editor@yayin.local</li>
+          <li>Yazar · author@yayin.local</li>
+          <li>Hakem · reviewer@yayin.local</li>
+        </ul>
+        <p class="demo-password">Yerel şifre: Demo123!</p>
+      </aside>
     }
-
-    <button type="submit" [disabled]="submitting()">
-      {{ submitting() ? 'Giriş…' : 'Giriş yap' }}
-    </button>
-  </form>
+  </div>
 </section>

@@ -1,13 +1,14 @@
+using Blog.API.Infrastructure.Authorization;
 using Blog.Application.Notifications.Commands.MarkNotificationRead;
 using Blog.Application.Notifications.Queries.GetNotifications;
+using Blog.Domain.Authorization;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Blog.API.Controllers;
 
 [ApiController]
-[Authorize]
+[HasPermission(Permissions.Notifications.View)]
 [Route("api/[controller]")]
 public class NotificationsController : ControllerBase
 {

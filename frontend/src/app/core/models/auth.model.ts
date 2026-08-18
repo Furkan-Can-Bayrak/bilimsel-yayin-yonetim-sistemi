@@ -1,18 +1,24 @@
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 
 export interface LoginResponse {
   accessToken: string;
-  username: string;
-  role: string;
   expiresAtUtc: string;
+  userId: number;
+  email: string;
+  fullName: string;
+  roles: string[];
+  permissions: string[];
 }
 
-export interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  postCount: number;
+export interface AuthSession {
+  accessToken: string;
+  expiresAtUtc: string;
+  userId: number;
+  email: string;
+  fullName: string;
+  roles: string[];
+  permissions: string[];
 }

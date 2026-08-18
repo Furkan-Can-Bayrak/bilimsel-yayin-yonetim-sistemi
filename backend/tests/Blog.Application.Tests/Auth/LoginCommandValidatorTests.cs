@@ -9,7 +9,7 @@ public class LoginCommandValidatorTests
     [Fact]
     public void Valid_login_passes()
     {
-        var result = _sut.Validate(new LoginCommand("admin", "Password12"));
+        var result = _sut.Validate(new LoginCommand("admin@yayin.local", "Password12"));
 
         Assert.True(result.IsValid);
     }
@@ -17,7 +17,7 @@ public class LoginCommandValidatorTests
     [Fact]
     public void Short_password_fails()
     {
-        var result = _sut.Validate(new LoginCommand("admin", "123"));
+        var result = _sut.Validate(new LoginCommand("admin@yayin.local", "123"));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(LoginCommand.Password));

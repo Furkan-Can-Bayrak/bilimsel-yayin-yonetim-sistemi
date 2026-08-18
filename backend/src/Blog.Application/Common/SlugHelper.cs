@@ -10,7 +10,7 @@ public static partial class SlugHelper
   {
     if (string.IsNullOrWhiteSpace(title))
     {
-      return "post";
+      return "makale";
     }
 
     var normalized = title.Trim().ToLowerInvariant();
@@ -29,7 +29,7 @@ public static partial class SlugHelper
     slug = NonAlphanumericRegex().Replace(slug, "-");
     slug = MultiDashRegex().Replace(slug, "-").Trim('-');
 
-    return string.IsNullOrEmpty(slug) ? "post" : slug;
+    return string.IsNullOrEmpty(slug) ? "makale" : slug;
   }
 
   public static async Task<string> EnsureUniqueSlugAsync(

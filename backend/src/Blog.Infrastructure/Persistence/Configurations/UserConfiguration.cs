@@ -12,19 +12,41 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.Username)
+        builder.Property(u => u.Email)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(200);
 
         builder.Property(u => u.PasswordHash)
             .IsRequired()
             .HasMaxLength(500);
 
-        builder.Property(u => u.Role)
+        builder.Property(u => u.FullName)
             .IsRequired()
+            .HasMaxLength(150);
+
+        builder.Property(u => u.AcademicTitle)
             .HasMaxLength(50);
 
-        builder.HasIndex(u => u.Username)
+        builder.Property(u => u.Affiliation)
+            .HasMaxLength(200);
+
+        // ORCID her zaman 19 karakter: 0000-0002-1825-0097
+        builder.Property(u => u.Orcid)
+            .HasMaxLength(19)
+            .IsFixedLength();
+
+        // Silinmiş kayıtlar dahil global tekil. E-posta kişinin kimliği olduğu için
+        // rezerve kalır; dönen kullanıcıya yeni hesap değil, eski kaydı geri verilir.
+        builder.HasIndex(u => u.Email)
             .IsUnique();
+
+        // ORCID küresel araştırmacı kimliği; o da silinmiş kayıtlar dahil tekil.
+        // Filtre yalnızca NULL'lar için: SQL Server nullable kolonda düz unique index
+        // kullanıldığında ikinci NULL'ı yinelenen sayıp reddeder.
+        builder.HasIndex(u => u.Orcid)
+            .IsUnique()
+            .HasFilter("[Orcid] IS NOT NULL");
+
+        builder.HasQueryFilter(u => u.DeletedAtUtc == null);
     }
 }

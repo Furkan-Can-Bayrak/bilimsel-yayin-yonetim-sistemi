@@ -1,0 +1,66 @@
+.page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.back {
+  margin: 0 0 1.75rem;
+}
+
+.back a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.back a:hover {
+  color: var(--accent);
+}
+
+article header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+
+h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.85rem, 4vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+}
+
+.summary {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--body);
+  line-height: 1.5;
+}
+
+.content {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.8;
+  color: var(--body);
+  white-space: pre-wrap;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  background: #f8ecec;
+  padding: 1rem;
+  border-radius: 4px;
+}

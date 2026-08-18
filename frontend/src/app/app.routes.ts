@@ -1,29 +1,41 @@
 import { Routes } from '@angular/router';
-import { PostList } from './features/posts/post-list/post-list';
-import { PostDetailPage } from './features/posts/post-detail/post-detail';
+import { ManuscriptList } from './features/manuscripts/manuscript-list/manuscript-list';
+import { ManuscriptDetailPage } from './features/manuscripts/manuscript-detail/manuscript-detail';
 import { LoginPage } from './features/auth/login/login';
-import { AdminPostList } from './features/admin/admin-post-list/admin-post-list';
-import { AdminPostForm } from './features/admin/admin-post-form/admin-post-form';
+import { AdminManuscriptList } from './features/admin/admin-manuscript-list/admin-manuscript-list';
+import { AdminManuscriptForm } from './features/admin/admin-manuscript-form/admin-manuscript-form';
 import { AdminNotifications } from './features/admin/admin-notifications/admin-notifications';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, permissionGuard, permissionGuardAny } from './core/guards/auth.guard';
+import { Permissions } from './core/auth/permissions';
 
-/**
- * Routes = URL → hangi sayfa?
- * Public: / , /posts/:slug
- * Admin:  /admin/login , /admin , /admin/posts/new , /admin/posts/:id/edit , /admin/notifications
- */
 export const routes: Routes = [
-  { path: '', component: PostList },
-  { path: 'posts/:slug', component: PostDetailPage },
+  { path: '', component: ManuscriptList },
+  { path: 'manuscripts/:slug', component: ManuscriptDetailPage },
   { path: 'admin/login', component: LoginPage },
   {
     path: 'admin',
     canActivate: [authGuard],
     children: [
-      { path: '', component: AdminPostList },
-      { path: 'posts/new', component: AdminPostForm },
-      { path: 'posts/:id/edit', component: AdminPostForm },
-      { path: 'notifications', component: AdminNotifications },
+      {
+        path: '',
+        component: AdminManuscriptList,
+        canActivate: [permissionGuardAny(Permissions.Manuscripts.ViewAll, Permissions.Manuscripts.Create)],
+      },
+      {
+        path: 'manuscripts/new',
+        component: AdminManuscriptForm,
+        canActivate: [permissionGuard(Permissions.Manuscripts.Create)],
+      },
+      {
+        path: 'manuscripts/:id/edit',
+        component: AdminManuscriptForm,
+        canActivate: [permissionGuard(Permissions.Manuscripts.Update)],
+      },
+      {
+        path: 'notifications',
+        component: AdminNotifications,
+        canActivate: [permissionGuard(Permissions.Notifications.View)],
+      },
     ],
   },
   { path: '**', redirectTo: '' },
