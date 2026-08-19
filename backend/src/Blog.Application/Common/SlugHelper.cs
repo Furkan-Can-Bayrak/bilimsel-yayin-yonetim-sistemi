@@ -41,6 +41,16 @@ public static partial class SlugHelper
     return slug;
   }
 
+  public static Task<string> GenerateUniqueSlugAsync(
+    string value,
+    string propertyName,
+    Func<string, Task<bool>> slugExists,
+    CancellationToken cancellationToken = default)
+  {
+    var baseSlug = GenerateSlug(value, propertyName);
+    return EnsureUniqueSlugAsync(slugExists, baseSlug, cancellationToken);
+  }
+
   public static async Task<string> EnsureUniqueSlugAsync(
     Func<string, Task<bool>> slugExists,
     string baseSlug,

@@ -13,8 +13,7 @@ public sealed record CreateManuscriptCommand(
     string Title,
     string Content,
     string? Summary,
-    int ResearchAreaId,
-    string? Slug) : IRequest<CreateManuscriptResult>;
+    int ResearchAreaId) : IRequest<CreateManuscriptResult>;
 
 public sealed class CreateManuscriptCommandValidator : AbstractValidator<CreateManuscriptCommand>
 {
@@ -24,7 +23,6 @@ public sealed class CreateManuscriptCommandValidator : AbstractValidator<CreateM
         RuleFor(x => x.Content).NotEmpty();
         RuleFor(x => x.Summary).MaximumLength(500).When(x => x.Summary is not null);
         RuleFor(x => x.ResearchAreaId).GreaterThan(0);
-        RuleFor(x => x.Slug).MaximumLength(220).When(x => !string.IsNullOrWhiteSpace(x.Slug));
     }
 }
 
@@ -54,19 +52,10 @@ public sealed class CreateManuscriptCommandHandler
             throw new NotFoundException($"Araştırma alanı bulunamadı: {request.ResearchAreaId}");
         }
 
-        var baseSlug = string.IsNullOrWhiteSpace(request.Slug)
-            ? SlugHelper.GenerateSlug(request.Title, nameof(request.Title))
-            : SlugHelper.GenerateSlug(request.Slug, nameof(request.Slug));
-
-        // {slug} rotası ile GET .../admin çakışmasın.
-        if (baseSlug == "admin")
-        {
-            baseSlug = "makale";
-        }
-
-        var slug = await SlugHelper.EnsureUniqueSlugAsync(
+        var slug = await SlugHelper.GenerateUniqueSlugAsync(
+            request.Title,
+            nameof(request.Title),
             s => _db.Manuscripts.AnyAsync(m => m.Slug == s, cancellationToken),
-            baseSlug,
             cancellationToken);
 
         var manuscript = new Manuscript

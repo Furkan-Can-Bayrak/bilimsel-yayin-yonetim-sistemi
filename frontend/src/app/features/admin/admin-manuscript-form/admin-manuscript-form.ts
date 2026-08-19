@@ -46,7 +46,6 @@ export class AdminManuscriptForm implements OnInit {
 
   readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
-    slug: [''],
     summary: [''],
     content: ['', Validators.required],
     researchAreaId: [0, [Validators.required, Validators.min(1)]],
@@ -144,7 +143,6 @@ export class AdminManuscriptForm implements OnInit {
       content: raw.content,
       summary: raw.summary.trim() ? raw.summary.trim() : null,
       researchAreaId: raw.researchAreaId,
-      slug: raw.slug.trim() ? raw.slug.trim() : null,
     };
 
     this.submitting.set(true);
@@ -244,7 +242,6 @@ export class AdminManuscriptForm implements OnInit {
       next: (manuscript) => {
         this.form.patchValue({
           title: manuscript.title,
-          slug: manuscript.slug,
           summary: manuscript.summary ?? '',
           content: manuscript.content,
           researchAreaId: manuscript.researchAreaId,

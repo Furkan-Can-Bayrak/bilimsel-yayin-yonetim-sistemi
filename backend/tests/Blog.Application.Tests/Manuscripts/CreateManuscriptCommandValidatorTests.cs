@@ -10,7 +10,7 @@ public class CreateManuscriptCommandValidatorTests
     public void Valid_command_passes()
     {
         var result = _sut.Validate(
-            new CreateManuscriptCommand("İlk makale", "İçerik buraya", "Özet", 1, null));
+            new CreateManuscriptCommand("İlk makale", "İçerik buraya", "Özet", 1));
 
         Assert.True(result.IsValid);
     }
@@ -19,7 +19,7 @@ public class CreateManuscriptCommandValidatorTests
     public void Empty_title_fails()
     {
         var result = _sut.Validate(
-            new CreateManuscriptCommand("", "İçerik", null, 1, null));
+            new CreateManuscriptCommand("", "İçerik", null, 1));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateManuscriptCommand.Title));
@@ -29,7 +29,7 @@ public class CreateManuscriptCommandValidatorTests
     public void ResearchAreaId_must_be_greater_than_zero()
     {
         var result = _sut.Validate(
-            new CreateManuscriptCommand("Başlık", "İçerik", null, 0, null));
+            new CreateManuscriptCommand("Başlık", "İçerik", null, 0));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateManuscriptCommand.ResearchAreaId));

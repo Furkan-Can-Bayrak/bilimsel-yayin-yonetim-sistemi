@@ -7,7 +7,7 @@
 ## Özellikler
 
 - Public: makale / araştırma alanı listesi ve detay (anonim)
-- Yönetim: izin tabanlı JWT ile makale ve araştırma alanı CRUD + `GET /api/manuscripts/admin` (taslaklar dahil)
+- Yönetim: izin tabanlı JWT ile makale ve araştırma alanı CRUD + `GET /api/admin/manuscripts` (taslaklar dahil)
 - Makale yayınlanınca: uygulama içi bildirim + e-posta (dev’de log)
 - Bildirim listesi: `GET /api/notifications`
 - Seed (Development): araştırma alanı **Bilgisayar Bilimleri**, örnek makaleler, demo kullanıcılar (şifre User Secrets)
@@ -65,7 +65,7 @@ Visual Studio: **Blog.API** sağ tık → **Manage User Secrets**. Bu dosya `%AP
 |--------|------|------|
 | POST | `/api/auth/login` | Anonim |
 | GET | `/api/manuscripts?page&pageSize&search&researchAreaId`, `/api/manuscripts/{slug}` | Anonim |
-| GET | `/api/manuscripts/admin?page&pageSize&search&researchAreaId&status`, `/api/manuscripts/admin/{id}` | Giriş; ViewAll ise tümü, değilse kendi makaleleri |
+| GET | `/api/admin/manuscripts?page&pageSize&search&researchAreaId&status`, `/api/admin/manuscripts/{id}` | Giriş; ViewAll ise tümü, değilse kendi makaleleri |
 | POST | `/api/manuscripts/{id}/submit` | `Manuscript.Submit` (yazar) |
 | POST | `/api/manuscripts/{id}/accept`, `/api/manuscripts/{id}/reject` | `Manuscript.Decide` |
 | POST | `/api/manuscripts/{id}/publish` | `Manuscript.Publish` (yalnızca Accepted) |

@@ -12,8 +12,7 @@ public sealed record UpdateManuscriptCommand(
     string Title,
     string Content,
     string? Summary,
-    int ResearchAreaId,
-    string? Slug) : IRequest;
+    int ResearchAreaId) : IRequest;
 
 public sealed class UpdateManuscriptCommandValidator : AbstractValidator<UpdateManuscriptCommand>
 {
@@ -24,7 +23,6 @@ public sealed class UpdateManuscriptCommandValidator : AbstractValidator<UpdateM
         RuleFor(x => x.Content).NotEmpty();
         RuleFor(x => x.Summary).MaximumLength(500).When(x => x.Summary is not null);
         RuleFor(x => x.ResearchAreaId).GreaterThan(0);
-        RuleFor(x => x.Slug).MaximumLength(220).When(x => !string.IsNullOrWhiteSpace(x.Slug));
     }
 }
 
@@ -67,18 +65,10 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
             throw new NotFoundException($"Araştırma alanı bulunamadı: {request.ResearchAreaId}");
         }
 
-        var baseSlug = string.IsNullOrWhiteSpace(request.Slug)
-            ? SlugHelper.GenerateSlug(request.Title, nameof(request.Title))
-            : SlugHelper.GenerateSlug(request.Slug, nameof(request.Slug));
-
-        if (baseSlug == "admin")
-        {
-            baseSlug = "makale";
-        }
-
-        var slug = await SlugHelper.EnsureUniqueSlugAsync(
+        var slug = await SlugHelper.GenerateUniqueSlugAsync(
+            request.Title,
+            nameof(request.Title),
             s => _db.Manuscripts.AnyAsync(m => m.Slug == s && m.Id != request.Id, cancellationToken),
-            baseSlug,
             cancellationToken);
 
         manuscript.Title = request.Title.Trim();

@@ -55,7 +55,7 @@ public class ResearchAreasController : ControllerBase
         [FromBody] UpdateResearchAreaRequest body,
         CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateResearchAreaCommand(id, body.Name, body.Slug), cancellationToken);
+        await _mediator.Send(new UpdateResearchAreaCommand(id, body.Name), cancellationToken);
         return NoContent();
     }
 
@@ -68,4 +68,4 @@ public class ResearchAreasController : ControllerBase
     }
 }
 
-public sealed record UpdateResearchAreaRequest(string Name, string? Slug);
+public sealed record UpdateResearchAreaRequest(string Name);

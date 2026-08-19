@@ -20,6 +20,7 @@ import {
 export class ManuscriptService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiBaseUrl}/manuscripts`;
+  private readonly adminBaseUrl = `${environment.apiBaseUrl}/admin/manuscripts`;
 
   getPublished(query: ManuscriptListQuery = {}): Observable<PagedResult<ManuscriptListItem>> {
     return this.http.get<PagedResult<ManuscriptListItem>>(this.baseUrl, {
@@ -32,13 +33,13 @@ export class ManuscriptService {
   }
 
   getAdminList(query: ManuscriptListQuery = {}): Observable<PagedResult<AdminManuscriptListItem>> {
-    return this.http.get<PagedResult<AdminManuscriptListItem>>(`${this.baseUrl}/admin`, {
+    return this.http.get<PagedResult<AdminManuscriptListItem>>(this.adminBaseUrl, {
       params: this.toParams(query),
     });
   }
 
   getAdminById(id: number): Observable<AdminManuscriptDetail> {
-    return this.http.get<AdminManuscriptDetail>(`${this.baseUrl}/admin/${id}`);
+    return this.http.get<AdminManuscriptDetail>(`${this.adminBaseUrl}/${id}`);
   }
 
   create(body: CreateManuscriptRequest): Observable<CreateManuscriptResult> {

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.ResearchAreas.Commands.CreateResearchArea;
 
-public sealed record CreateResearchAreaCommand(string Name, string? Slug)
+public sealed record CreateResearchAreaCommand(string Name)
     : IRequest<CreateResearchAreaResult>;
 
 public sealed class CreateResearchAreaCommandValidator : AbstractValidator<CreateResearchAreaCommand>
@@ -16,7 +16,6 @@ public sealed class CreateResearchAreaCommandValidator : AbstractValidator<Creat
     public CreateResearchAreaCommandValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.Slug).MaximumLength(120).When(x => !string.IsNullOrWhiteSpace(x.Slug));
     }
 }
 
@@ -34,13 +33,10 @@ public sealed class CreateResearchAreaCommandHandler
         CreateResearchAreaCommand request,
         CancellationToken cancellationToken)
     {
-        var baseSlug = string.IsNullOrWhiteSpace(request.Slug)
-            ? SlugHelper.GenerateSlug(request.Name, nameof(request.Name))
-            : SlugHelper.GenerateSlug(request.Slug, nameof(request.Slug));
-
-        var slug = await SlugHelper.EnsureUniqueSlugAsync(
+        var slug = await SlugHelper.GenerateUniqueSlugAsync(
+            request.Name,
+            nameof(request.Name),
             s => _db.ResearchAreas.AnyAsync(a => a.Slug == s, cancellationToken),
-            baseSlug,
             cancellationToken);
 
         var area = new ResearchArea

@@ -7,12 +7,9 @@ using Blog.Application.Manuscripts.Commands.RejectManuscript;
 using Blog.Application.Manuscripts.Commands.SubmitManuscript;
 using Blog.Application.Manuscripts.Commands.UnpublishManuscript;
 using Blog.Application.Manuscripts.Commands.UpdateManuscript;
-using Blog.Application.Manuscripts.Queries.GetAdminManuscripts;
-using Blog.Application.Manuscripts.Queries.GetManuscriptById;
 using Blog.Application.Manuscripts.Queries.GetManuscriptBySlug;
 using Blog.Application.Manuscripts.Queries.GetManuscripts;
 using Blog.Domain.Authorization;
-using Blog.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,32 +40,6 @@ public class ManuscriptsController : ControllerBase
             new GetManuscriptsQuery(page, pageSize, search, researchAreaId),
             cancellationToken);
         return Ok(result);
-    }
-
-    /// <summary>
-    /// ViewAll ise tüm kayıtlar; aksi halde yalnızca giriş yapanın yazdığı makaleler.
-    /// {slug} ile çakışmasın diye literal "admin".
-    /// </summary>
-    [HttpGet("admin")]
-    public async Task<IActionResult> GetAdmin(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? search = null,
-        [FromQuery] int? researchAreaId = null,
-        [FromQuery] ManuscriptStatus? status = null,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await _mediator.Send(
-            new GetAdminManuscriptsQuery(page, pageSize, search, researchAreaId, status),
-            cancellationToken);
-        return Ok(result);
-    }
-
-    [HttpGet("admin/{id:int}")]
-    public async Task<IActionResult> GetAdminById(int id, CancellationToken cancellationToken)
-    {
-        var manuscript = await _mediator.Send(new GetManuscriptByIdQuery(id), cancellationToken);
-        return manuscript is null ? NotFound() : Ok(manuscript);
     }
 
     [AllowAnonymous]
@@ -102,8 +73,7 @@ public class ManuscriptsController : ControllerBase
                 body.Title,
                 body.Content,
                 body.Summary,
-                body.ResearchAreaId,
-                body.Slug),
+                body.ResearchAreaId),
             cancellationToken);
 
         return NoContent();
@@ -162,5 +132,4 @@ public sealed record UpdateManuscriptRequest(
     string Title,
     string Content,
     string? Summary,
-    int ResearchAreaId,
-    string? Slug);
+    int ResearchAreaId);

@@ -29,4 +29,17 @@ public class SlugHelperTests
 
         Assert.Equal(["Bu metinden URL üretilemedi."], ex.Errors["Slug"]);
     }
+
+    [Fact]
+    public async Task GenerateUniqueSlugAsync_appends_suffix_when_taken()
+    {
+        var taken = new HashSet<string> { "derin-ogrenme" };
+
+        var slug = await SlugHelper.GenerateUniqueSlugAsync(
+            "Derin Öğrenme",
+            "Title",
+            s => Task.FromResult(taken.Contains(s)));
+
+        Assert.Equal("derin-ogrenme-2", slug);
+    }
 }
