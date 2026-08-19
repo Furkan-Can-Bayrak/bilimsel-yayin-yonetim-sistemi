@@ -1,6 +1,7 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts.Dtos;
 using Blog.Domain.Authorization;
+using Blog.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,10 +28,11 @@ public sealed class GetManuscriptByIdQueryHandler
         var includeReview = _currentUser.HasPermission(Permissions.Reviews.ViewAll)
             || _currentUser.HasPermission(Permissions.Reviews.Submit);
 
-        var manuscript = await _db.Manuscripts
+        var row = await _db.Manuscripts
             .AsNoTracking()
             .Where(m => m.Id == request.Id)
-            .Select(m => new AdminManuscriptDetailDto(
+            .Select(m => new
+            {
                 m.Id,
                 m.Title,
                 m.Slug,
@@ -39,36 +41,61 @@ public sealed class GetManuscriptByIdQueryHandler
                 m.PublishedAt,
                 m.Status,
                 m.ResearchAreaId,
-                m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
+                ResearchAreaName = m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
                 m.AuthorId,
-                m.Author == null
-                    ? string.Empty
-                    : string.IsNullOrWhiteSpace(m.Author.AcademicTitle)
-                        ? m.Author.FirstName + " " + m.Author.LastName
-                        : m.Author.AcademicTitle + " " + m.Author.FirstName + " " + m.Author.LastName,
-                includeReview
+                AuthorTitle = m.Author == null ? AcademicTitle.Dr : m.Author.AcademicTitle,
+                AuthorFirstName = m.Author == null ? string.Empty : m.Author.FirstName,
+                AuthorLastName = m.Author == null ? string.Empty : m.Author.LastName,
+                CurrentReview = includeReview
                     ? m.Reviews
                         .OrderByDescending(r => r.AssignedAtUtc)
-                        .Select(r => new ReviewSummaryDto(
+                        .Select(r => new
+                        {
                             r.Id,
                             r.ReviewerId,
-                            r.Reviewer == null
-                                ? string.Empty
-                                : string.IsNullOrWhiteSpace(r.Reviewer.AcademicTitle)
-                                    ? r.Reviewer.FirstName + " " + r.Reviewer.LastName
-                                    : r.Reviewer.AcademicTitle + " " + r.Reviewer.FirstName + " " + r.Reviewer.LastName,
+                            ReviewerTitle = r.Reviewer == null ? AcademicTitle.Dr : r.Reviewer.AcademicTitle,
+                            ReviewerFirstName = r.Reviewer == null ? string.Empty : r.Reviewer.FirstName,
+                            ReviewerLastName = r.Reviewer == null ? string.Empty : r.Reviewer.LastName,
                             r.AssignedAtUtc,
                             r.SubmittedAtUtc,
                             r.Recommendation,
-                            r.Comments))
+                            r.Comments
+                        })
                         .FirstOrDefault()
-                    : null))
+                    : null
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (manuscript is null)
+        if (row is null)
         {
             return null;
         }
+
+        var manuscript = new AdminManuscriptDetailDto(
+            row.Id,
+            row.Title,
+            row.Slug,
+            row.Content,
+            row.Summary,
+            row.PublishedAt,
+            row.Status,
+            row.ResearchAreaId,
+            row.ResearchAreaName,
+            row.AuthorId,
+            AcademicTitles.FormatName(row.AuthorTitle, row.AuthorFirstName, row.AuthorLastName),
+            row.CurrentReview is null
+                ? null
+                : new ReviewSummaryDto(
+                    row.CurrentReview.Id,
+                    row.CurrentReview.ReviewerId,
+                    AcademicTitles.FormatName(
+                        row.CurrentReview.ReviewerTitle,
+                        row.CurrentReview.ReviewerFirstName,
+                        row.CurrentReview.ReviewerLastName),
+                    row.CurrentReview.AssignedAtUtc,
+                    row.CurrentReview.SubmittedAtUtc,
+                    row.CurrentReview.Recommendation,
+                    row.CurrentReview.Comments));
 
         var isAssignedReviewer = _currentUser.UserId is int userId &&
             await _db.Reviews.AnyAsync(

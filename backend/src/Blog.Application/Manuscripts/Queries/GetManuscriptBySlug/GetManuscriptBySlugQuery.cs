@@ -22,23 +22,39 @@ public sealed class GetManuscriptBySlugQueryHandler
         GetManuscriptBySlugQuery request,
         CancellationToken cancellationToken)
     {
-        return await _db.Manuscripts
+        var row = await _db.Manuscripts
             .AsNoTracking()
             .Where(m => m.Status == ManuscriptStatus.Published && m.Slug == request.Slug)
-            .Select(m => new ManuscriptDetailDto(
+            .Select(m => new
+            {
                 m.Id,
                 m.Title,
                 m.Slug,
                 m.Content,
                 m.Summary,
                 m.PublishedAt,
-                m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
-                m.ResearchArea != null ? m.ResearchArea.Slug : string.Empty,
-                m.Author == null
-                    ? string.Empty
-                    : string.IsNullOrWhiteSpace(m.Author.AcademicTitle)
-                        ? m.Author.FirstName + " " + m.Author.LastName
-                        : m.Author.AcademicTitle + " " + m.Author.FirstName + " " + m.Author.LastName))
+                ResearchAreaName = m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
+                ResearchAreaSlug = m.ResearchArea != null ? m.ResearchArea.Slug : string.Empty,
+                AuthorTitle = m.Author == null ? AcademicTitle.Dr : m.Author.AcademicTitle,
+                AuthorFirstName = m.Author == null ? string.Empty : m.Author.FirstName,
+                AuthorLastName = m.Author == null ? string.Empty : m.Author.LastName
+            })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (row is null)
+        {
+            return null;
+        }
+
+        return new ManuscriptDetailDto(
+            row.Id,
+            row.Title,
+            row.Slug,
+            row.Content,
+            row.Summary,
+            row.PublishedAt,
+            row.ResearchAreaName,
+            row.ResearchAreaSlug,
+            AcademicTitles.FormatName(row.AuthorTitle, row.AuthorFirstName, row.AuthorLastName));
     }
 }

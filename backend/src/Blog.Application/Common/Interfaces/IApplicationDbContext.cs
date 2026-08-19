@@ -7,6 +7,7 @@ public interface IApplicationDbContext
 {
     DbSet<Manuscript> Manuscripts { get; }
     DbSet<ResearchArea> ResearchAreas { get; }
+    DbSet<Institution> Institutions { get; }
     DbSet<User> Users { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<Role> Roles { get; }

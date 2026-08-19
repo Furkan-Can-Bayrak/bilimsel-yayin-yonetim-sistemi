@@ -8,7 +8,7 @@ public class ManuscriptWorkflowTests
     [Fact]
     public void Submit_from_draft_sets_submitted()
     {
-        var manuscript = new Manuscript { Status = ManuscriptStatus.Draft };
+        var manuscript = new Manuscript();
 
         manuscript.Submit();
 
@@ -18,7 +18,8 @@ public class ManuscriptWorkflowTests
     [Fact]
     public void Submit_from_rejected_sets_submitted()
     {
-        var manuscript = new Manuscript { Status = ManuscriptStatus.Rejected };
+        var manuscript = Submitted();
+        manuscript.Reject();
 
         manuscript.Submit();
 
@@ -28,7 +29,7 @@ public class ManuscriptWorkflowTests
     [Fact]
     public void Publish_from_draft_throws()
     {
-        var manuscript = new Manuscript { Status = ManuscriptStatus.Draft };
+        var manuscript = new Manuscript();
 
         Assert.Throws<InvalidOperationException>(() => manuscript.Publish(DateTime.UtcNow));
     }
@@ -36,7 +37,7 @@ public class ManuscriptWorkflowTests
     [Fact]
     public void Accept_then_publish_sets_published_at()
     {
-        var manuscript = new Manuscript { Status = ManuscriptStatus.Submitted };
+        var manuscript = Submitted();
         var now = new DateTime(2026, 8, 18, 12, 0, 0, DateTimeKind.Utc);
 
         manuscript.Accept();
@@ -49,7 +50,7 @@ public class ManuscriptWorkflowTests
     [Fact]
     public void Unpublish_returns_to_accepted()
     {
-        var manuscript = new Manuscript { Status = ManuscriptStatus.Submitted };
+        var manuscript = Submitted();
         manuscript.Accept();
         manuscript.Publish(DateTime.UtcNow);
 
@@ -62,7 +63,7 @@ public class ManuscriptWorkflowTests
     [Fact]
     public void AssignReviewer_from_submitted_sets_under_review()
     {
-        var manuscript = new Manuscript { Status = ManuscriptStatus.Submitted };
+        var manuscript = Submitted();
 
         manuscript.AssignReviewer();
 
@@ -72,7 +73,7 @@ public class ManuscriptWorkflowTests
     [Fact]
     public void Accept_from_under_review_succeeds()
     {
-        var manuscript = new Manuscript { Status = ManuscriptStatus.Submitted };
+        var manuscript = Submitted();
         manuscript.AssignReviewer();
 
         manuscript.Accept();
@@ -97,5 +98,12 @@ public class ManuscriptWorkflowTests
 
         Assert.Throws<InvalidOperationException>(
             () => review.SubmitReport(ReviewRecommendation.Accept, "  ", DateTime.UtcNow));
+    }
+
+    private static Manuscript Submitted()
+    {
+        var manuscript = new Manuscript();
+        manuscript.Submit();
+        return manuscript;
     }
 }

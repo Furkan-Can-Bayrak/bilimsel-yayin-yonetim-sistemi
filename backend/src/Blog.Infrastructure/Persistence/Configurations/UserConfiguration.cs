@@ -1,4 +1,5 @@
 using Blog.Domain.Entities;
+using Blog.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -29,10 +30,17 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(80);
 
         builder.Property(u => u.AcademicTitle)
-            .HasMaxLength(50);
+            .HasConversion<int>()
+            .IsRequired()
+            .HasDefaultValue(AcademicTitle.Dr)
+            .HasSentinel(default(AcademicTitle));
 
-        builder.Property(u => u.Affiliation)
-            .HasMaxLength(200);
+        builder.HasOne(u => u.Institution)
+            .WithMany(i => i.Users)
+            .HasForeignKey(u => u.InstitutionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(u => u.InstitutionId);
 
         // ORCID her zaman 19 karakter: 0000-0002-1825-0097
         builder.Property(u => u.Orcid)
@@ -52,5 +60,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasFilter("[Orcid] IS NOT NULL");
 
         builder.Ignore(u => u.DisplayName);
+        builder.Ignore(u => u.DisplayNameWithTitle);
     }
 }

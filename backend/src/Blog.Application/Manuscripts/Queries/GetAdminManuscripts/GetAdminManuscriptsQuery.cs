@@ -60,11 +60,12 @@ public sealed class GetAdminManuscriptsQueryHandler
         var totalCount = await query.CountAsync(cancellationToken);
         var includeReview = _currentUser.HasPermission(Permissions.Reviews.ViewAll);
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(m => m.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(m => new AdminManuscriptListItemDto(
+            .Select(m => new
+            {
                 m.Id,
                 m.Title,
                 m.Slug,
@@ -72,31 +73,55 @@ public sealed class GetAdminManuscriptsQueryHandler
                 m.PublishedAt,
                 m.Status,
                 m.ResearchAreaId,
-                m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
+                ResearchAreaName = m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
                 m.AuthorId,
-                m.Author == null
-                    ? string.Empty
-                    : string.IsNullOrWhiteSpace(m.Author.AcademicTitle)
-                        ? m.Author.FirstName + " " + m.Author.LastName
-                        : m.Author.AcademicTitle + " " + m.Author.FirstName + " " + m.Author.LastName,
-                includeReview
+                AuthorTitle = m.Author == null ? AcademicTitle.Dr : m.Author.AcademicTitle,
+                AuthorFirstName = m.Author == null ? string.Empty : m.Author.FirstName,
+                AuthorLastName = m.Author == null ? string.Empty : m.Author.LastName,
+                CurrentReview = includeReview
                     ? m.Reviews
                         .OrderByDescending(r => r.AssignedAtUtc)
-                        .Select(r => new ReviewSummaryDto(
+                        .Select(r => new
+                        {
                             r.Id,
                             r.ReviewerId,
-                            r.Reviewer == null
-                                ? string.Empty
-                                : string.IsNullOrWhiteSpace(r.Reviewer.AcademicTitle)
-                                    ? r.Reviewer.FirstName + " " + r.Reviewer.LastName
-                                    : r.Reviewer.AcademicTitle + " " + r.Reviewer.FirstName + " " + r.Reviewer.LastName,
+                            ReviewerTitle = r.Reviewer == null ? AcademicTitle.Dr : r.Reviewer.AcademicTitle,
+                            ReviewerFirstName = r.Reviewer == null ? string.Empty : r.Reviewer.FirstName,
+                            ReviewerLastName = r.Reviewer == null ? string.Empty : r.Reviewer.LastName,
                             r.AssignedAtUtc,
                             r.SubmittedAtUtc,
                             r.Recommendation,
-                            r.Comments))
+                            r.Comments
+                        })
                         .FirstOrDefault()
-                    : null))
+                    : null
+            })
             .ToListAsync(cancellationToken);
+
+        var items = rows.ConvertAll(m => new AdminManuscriptListItemDto(
+            m.Id,
+            m.Title,
+            m.Slug,
+            m.Summary,
+            m.PublishedAt,
+            m.Status,
+            m.ResearchAreaId,
+            m.ResearchAreaName,
+            m.AuthorId,
+            AcademicTitles.FormatName(m.AuthorTitle, m.AuthorFirstName, m.AuthorLastName),
+            m.CurrentReview is null
+                ? null
+                : new ReviewSummaryDto(
+                    m.CurrentReview.Id,
+                    m.CurrentReview.ReviewerId,
+                    AcademicTitles.FormatName(
+                        m.CurrentReview.ReviewerTitle,
+                        m.CurrentReview.ReviewerFirstName,
+                        m.CurrentReview.ReviewerLastName),
+                    m.CurrentReview.AssignedAtUtc,
+                    m.CurrentReview.SubmittedAtUtc,
+                    m.CurrentReview.Recommendation,
+                    m.CurrentReview.Comments)));
 
         return new PagedResult<AdminManuscriptListItemDto>(items, page, pageSize, totalCount);
     }

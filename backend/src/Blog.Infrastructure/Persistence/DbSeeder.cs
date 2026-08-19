@@ -24,6 +24,7 @@ public static class DbSeeder
         await SeedPermissionsAsync(context, cancellationToken);
         await SeedRolesAsync(context, cancellationToken);
         await SyncSystemRolePermissionsAsync(context, cancellationToken);
+        await SeedInstitutionsAsync(context, cancellationToken);
         await SeedUsersAsync(context, configuration, cancellationToken);
         await SyncDevelopmentPasswordsAsync(context, configuration, cancellationToken);
         await SeedContentAsync(context, cancellationToken);
@@ -190,6 +191,66 @@ public static class DbSeeder
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    private static readonly (string Name, string? Abbreviation)[] SeedInstitutions =
+    [
+        ("Orta Doğu Teknik Üniversitesi", "ODTÜ"),
+        ("İstanbul Teknik Üniversitesi", "İTÜ"),
+        ("Ege Üniversitesi", null),
+        ("Ankara Üniversitesi", null),
+        ("Hacettepe Üniversitesi", null),
+        ("Boğaziçi Üniversitesi", null),
+        ("İstanbul Üniversitesi", null),
+        ("Gazi Üniversitesi", null),
+        ("Yıldız Teknik Üniversitesi", "YTÜ"),
+        ("Marmara Üniversitesi", null),
+        ("Dokuz Eylül Üniversitesi", null),
+        ("Çukurova Üniversitesi", null),
+        ("Karadeniz Teknik Üniversitesi", "KTÜ"),
+        ("Atatürk Üniversitesi", null),
+        ("Erciyes Üniversitesi", null),
+        ("Selçuk Üniversitesi", null),
+        ("Bursa Uludağ Üniversitesi", null),
+        ("Akdeniz Üniversitesi", null),
+        ("Gaziantep Üniversitesi", null),
+        ("Fırat Üniversitesi", null),
+        ("Sabancı Üniversitesi", null),
+        ("Koç Üniversitesi", null),
+        ("Bilkent Üniversitesi", null)
+    ];
+
+    /// <summary>
+    /// Eksik kurumları ekler. İsim tekil olduğu için mevcut kayıtlara dokunmaz;
+    /// sonradan listeye giren üniversiteler bir sonraki açılışta gelir.
+    /// </summary>
+    private static async Task SeedInstitutionsAsync(
+        BlogDbContext context,
+        CancellationToken cancellationToken)
+    {
+        var existingNames = await context.Institutions
+            .IgnoreQueryFilters()
+            .Select(i => i.Name)
+            .ToListAsync(cancellationToken);
+
+        var existing = new HashSet<string>(existingNames, StringComparer.OrdinalIgnoreCase);
+
+        var missing = SeedInstitutions
+            .Where(i => !existing.Contains(i.Name))
+            .Select(i => new Institution
+            {
+                Name = i.Name,
+                Abbreviation = i.Abbreviation
+            })
+            .ToList();
+
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        context.Institutions.AddRange(missing);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     private static async Task SeedUsersAsync(
         BlogDbContext context,
         IConfiguration configuration,
@@ -226,6 +287,10 @@ public static class DbSeeder
             .IgnoreQueryFilters()
             .ToDictionaryAsync(r => r.Name, r => r.Id, cancellationToken);
 
+        var institutionIdsByName = await context.Institutions
+            .IgnoreQueryFilters()
+            .ToDictionaryAsync(i => i.Name, i => i.Id, cancellationToken);
+
         var hasher = new PasswordHasher<User>();
         var createdAtUtc = DateTime.UtcNow;
 
@@ -236,8 +301,8 @@ public static class DbSeeder
                 Password: adminPassword,
                 FirstName: "Sistem",
                 LastName: "Yöneticisi",
-                Title: (string?)null,
-                Affiliation: (string?)null,
+                Title: AcademicTitle.Dr,
+                InstitutionName: (string?)null,
                 Orcid: (string?)null,
                 RoleNames: new[] { AdminRoleName }
             ),
@@ -246,8 +311,8 @@ public static class DbSeeder
                 Password: demoPassword,
                 FirstName: "Selin",
                 LastName: "Aydın",
-                Title: (string?)"Prof. Dr.",
-                Affiliation: (string?)"İstanbul Teknik Üniversitesi",
+                Title: AcademicTitle.ProfDr,
+                InstitutionName: (string?)"İstanbul Teknik Üniversitesi",
                 Orcid: (string?)"0000-0001-2345-6789",
                 RoleNames: new[] { EditorRoleName }
             ),
@@ -258,8 +323,8 @@ public static class DbSeeder
                 Password: demoPassword,
                 FirstName: "Mert",
                 LastName: "Kaya",
-                Title: (string?)"Doç. Dr.",
-                Affiliation: (string?)"Ege Üniversitesi",
+                Title: AcademicTitle.DocDr,
+                InstitutionName: (string?)"Ege Üniversitesi",
                 Orcid: (string?)"0000-0002-3456-7890",
                 RoleNames: new[] { ReviewerRoleName, AuthorRoleName }
             ),
@@ -268,8 +333,8 @@ public static class DbSeeder
                 Password: demoPassword,
                 FirstName: "Elif",
                 LastName: "Demir",
-                Title: (string?)"Dr. Öğr. Üyesi",
-                Affiliation: (string?)"Orta Doğu Teknik Üniversitesi",
+                Title: AcademicTitle.DrOgrUyesi,
+                InstitutionName: (string?)"Orta Doğu Teknik Üniversitesi",
                 Orcid: (string?)"0000-0003-4567-8901",
                 RoleNames: new[] { AuthorRoleName }
             )
@@ -282,7 +347,9 @@ public static class DbSeeder
                 // Login gelen adresi küçük harfe çevirdiği için burada da normalize ediyoruz.
                 Email = seedUser.Email.Trim().ToLowerInvariant(),
                 AcademicTitle = seedUser.Title,
-                Affiliation = seedUser.Affiliation,
+                InstitutionId = seedUser.InstitutionName is string institutionName
+                    ? institutionIdsByName[institutionName]
+                    : null,
                 Orcid = seedUser.Orcid,
                 IsActive = true,
                 CreatedAtUtc = createdAtUtc
@@ -376,29 +443,34 @@ public static class DbSeeder
             .FirstOrDefaultAsync(u => u.Email == "author@yayin.local", cancellationToken)
             ?? await context.Users.IgnoreQueryFilters().FirstAsync(cancellationToken);
 
-        context.Manuscripts.AddRange(
-            new Manuscript
-            {
-                Title = "Derin Öğrenme ile Makale Sınıflandırma",
-                Slug = "derin-ogrenme-ile-makale-siniflandirma",
-                Summary = "Bilimsel metinlerin araştırma alanına otomatik atanması üzerine bir çalışma.",
-                Content = "Bu örnek makale seed verisidir. Değerlendirme ve yayın akışı sonraki adımlarda genişleyecek.",
-                Status = ManuscriptStatus.Published,
-                PublishedAt = DateTime.UtcNow,
-                ResearchAreaId = computerScience.Id,
-                AuthorId = author.Id
-            },
-            new Manuscript
-            {
-                Title = "Açık Erişim Dergilerinde Hakem Atama",
-                Slug = "acik-erisim-dergilerinde-hakem-atama",
-                Summary = "Hakem yükünün araştırma alanına göre dengelenmesi.",
-                Content = "Bu örnek makale, editör kararlarının ve hakem atamasının sistemde nasıl modelleneceğini gösterir.",
-                Status = ManuscriptStatus.Published,
-                PublishedAt = DateTime.UtcNow,
-                ResearchAreaId = computerScience.Id,
-                AuthorId = author.Id
-            });
+        var publishedAt = DateTime.UtcNow;
+        var first = new Manuscript
+        {
+            Title = "Derin Öğrenme ile Makale Sınıflandırma",
+            Slug = "derin-ogrenme-ile-makale-siniflandirma",
+            Summary = "Bilimsel metinlerin araştırma alanına otomatik atanması üzerine bir çalışma.",
+            Content = "Bu örnek makale seed verisidir. Değerlendirme ve yayın akışı sonraki adımlarda genişleyecek.",
+            ResearchAreaId = computerScience.Id,
+            AuthorId = author.Id
+        };
+        first.Submit();
+        first.Accept();
+        first.Publish(publishedAt);
+
+        var second = new Manuscript
+        {
+            Title = "Açık Erişim Dergilerinde Hakem Atama",
+            Slug = "acik-erisim-dergilerinde-hakem-atama",
+            Summary = "Hakem yükünün araştırma alanına göre dengelenmesi.",
+            Content = "Bu örnek makale, editör kararlarının ve hakem atamasının sistemde nasıl modelleneceğini gösterir.",
+            ResearchAreaId = computerScience.Id,
+            AuthorId = author.Id
+        };
+        second.Submit();
+        second.Accept();
+        second.Publish(publishedAt);
+
+        context.Manuscripts.AddRange(first, second);
 
         await context.SaveChangesAsync(cancellationToken);
     }

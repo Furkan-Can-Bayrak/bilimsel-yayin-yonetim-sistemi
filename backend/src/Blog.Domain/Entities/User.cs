@@ -1,4 +1,5 @@
 using Blog.Domain.Common;
+using Blog.Domain.Enums;
 
 namespace Blog.Domain.Entities;
 
@@ -18,11 +19,13 @@ public sealed class User : ISoftDeletable
 
     public string LastName { get; set; } = string.Empty;
 
-    /// <summary>Akademik unvan, ör. "Prof. Dr.", "Dr. Öğr. Üyesi".</summary>
-    public string? AcademicTitle { get; set; }
+    /// <summary>Akademik unvan. Verilmezse Dr.</summary>
+    public AcademicTitle AcademicTitle { get; set; } = AcademicTitle.Dr;
 
-    /// <summary>Bağlı olduğu kurum.</summary>
-    public string? Affiliation { get; set; }
+    /// <summary>Bağlı olduğu kurum. Bağımsız araştırmacıda null.</summary>
+    public int? InstitutionId { get; set; }
+
+    public Institution? Institution { get; set; }
 
     /// <summary>Araştırmacı kimlik numarası, ör. "0000-0002-1825-0097".</summary>
     public string? Orcid { get; set; }
@@ -43,6 +46,9 @@ public sealed class User : ISoftDeletable
 
     /// <summary>Unvansız görünen ad. Sorguda kullanma; EF bunu SQL'e çevirmez.</summary>
     public string DisplayName => $"{FirstName} {LastName}".Trim();
+
+    /// <summary>Unvanlı görünen ad. Sorguda kullanma; EF bunu SQL'e çevirmez.</summary>
+    public string DisplayNameWithTitle => AcademicTitles.FormatName(AcademicTitle, FirstName, LastName);
 
     public void SetName(string firstName, string lastName)
     {

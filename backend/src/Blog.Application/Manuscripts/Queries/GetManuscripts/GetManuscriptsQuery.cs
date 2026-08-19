@@ -52,23 +52,32 @@ public sealed class GetManuscriptsQueryHandler
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(m => m.PublishedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(m => new ManuscriptListItemDto(
+            .Select(m => new
+            {
                 m.Id,
                 m.Title,
                 m.Slug,
                 m.Summary,
                 m.PublishedAt,
-                m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
-                m.Author == null
-                    ? string.Empty
-                    : string.IsNullOrWhiteSpace(m.Author.AcademicTitle)
-                        ? m.Author.FirstName + " " + m.Author.LastName
-                        : m.Author.AcademicTitle + " " + m.Author.FirstName + " " + m.Author.LastName))
+                ResearchAreaName = m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
+                AuthorTitle = m.Author == null ? AcademicTitle.Dr : m.Author.AcademicTitle,
+                AuthorFirstName = m.Author == null ? string.Empty : m.Author.FirstName,
+                AuthorLastName = m.Author == null ? string.Empty : m.Author.LastName
+            })
             .ToListAsync(cancellationToken);
+
+        var items = rows.ConvertAll(m => new ManuscriptListItemDto(
+            m.Id,
+            m.Title,
+            m.Slug,
+            m.Summary,
+            m.PublishedAt,
+            m.ResearchAreaName,
+            AcademicTitles.FormatName(m.AuthorTitle, m.AuthorFirstName, m.AuthorLastName)));
 
         return new PagedResult<ManuscriptListItemDto>(items, page, pageSize, totalCount);
     }

@@ -11,8 +11,8 @@ public sealed class Manuscript : ISoftDeletable
     public string Slug { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public string? Summary { get; set; }
-    public DateTime? PublishedAt { get; set; }
-    public ManuscriptStatus Status { get; set; } = ManuscriptStatus.Draft;
+    public DateTime? PublishedAt { get; private set; }
+    public ManuscriptStatus Status { get; private set; } = ManuscriptStatus.Draft;
     public int ResearchAreaId { get; set; }
     public ResearchArea? ResearchArea { get; set; }
 

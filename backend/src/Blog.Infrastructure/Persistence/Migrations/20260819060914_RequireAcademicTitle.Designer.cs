@@ -4,6 +4,7 @@ using Blog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Blog.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260819060914_RequireAcademicTitle")]
+    partial class RequireAcademicTitle
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,35 +24,6 @@ namespace Blog.Infrastructure.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Blog.Domain.Entities.Institution", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Abbreviation")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasFilter("[DeletedAtUtc] IS NULL");
-
-                    b.ToTable("Institutions", (string)null);
-                });
 
             modelBuilder.Entity("Blog.Domain.Entities.Manuscript", b =>
                 {
@@ -293,7 +267,12 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.Property<int>("AcademicTitle")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasDefaultValue(6);
+                        .HasDefaultValue(6)
+                        .HasSentinel(0);
+
+                    b.Property<string>("Affiliation")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -310,9 +289,6 @@ namespace Blog.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(80)
                         .HasColumnType("nvarchar(80)");
-
-                    b.Property<int?>("InstitutionId")
-                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -339,8 +315,6 @@ namespace Blog.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
-
-                    b.HasIndex("InstitutionId");
 
                     b.HasIndex("Orcid")
                         .IsUnique()
@@ -421,16 +395,6 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("Blog.Domain.Entities.User", b =>
-                {
-                    b.HasOne("Blog.Domain.Entities.Institution", "Institution")
-                        .WithMany("Users")
-                        .HasForeignKey("InstitutionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Institution");
-                });
-
             modelBuilder.Entity("Blog.Domain.Entities.UserRole", b =>
                 {
                     b.HasOne("Blog.Domain.Entities.Role", "Role")
@@ -448,11 +412,6 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Blog.Domain.Entities.Institution", b =>
-                {
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("Blog.Domain.Entities.Manuscript", b =>

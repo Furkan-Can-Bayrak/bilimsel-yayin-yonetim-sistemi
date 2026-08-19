@@ -1,4 +1,5 @@
 using Blog.Domain.Entities;
+using Blog.Domain.Enums;
 
 namespace Blog.Application.Tests.Auth;
 
@@ -14,6 +15,17 @@ public class UserNameTests
         Assert.Equal("Elif", user.FirstName);
         Assert.Equal("Demir", user.LastName);
         Assert.Equal("Elif Demir", user.DisplayName);
+        Assert.Equal("Dr. Elif Demir", user.DisplayNameWithTitle);
+    }
+
+    [Fact]
+    public void DisplayNameWithTitle_prefixes_label()
+    {
+        var user = new User { AcademicTitle = AcademicTitle.DrOgrUyesi };
+
+        user.SetName("Elif", "Demir");
+
+        Assert.Equal("Dr. Öğr. Üyesi Elif Demir", user.DisplayNameWithTitle);
     }
 
     [Fact]
@@ -25,3 +37,25 @@ public class UserNameTests
         Assert.Throws<ArgumentException>(() => user.SetName("Elif", "\t"));
     }
 }
+
+public class AcademicTitleTests
+{
+    [Theory]
+    [InlineData(AcademicTitle.ProfDr, "Prof. Dr.")]
+    [InlineData(AcademicTitle.DocDr, "Doç. Dr.")]
+    [InlineData(AcademicTitle.DrOgrUyesi, "Dr. Öğr. Üyesi")]
+    [InlineData(AcademicTitle.OgrGor, "Öğr. Gör.")]
+    [InlineData(AcademicTitle.ArsGor, "Arş. Gör.")]
+    [InlineData(AcademicTitle.Dr, "Dr.")]
+    public void ToLabel_returns_display_text(AcademicTitle title, string expected)
+    {
+        Assert.Equal(expected, title.ToLabel());
+    }
+
+    [Fact]
+    public void FormatName_uses_dr_when_title_is_unknown()
+    {
+        Assert.Equal("Dr. Elif Demir", AcademicTitles.FormatName((AcademicTitle)0, "Elif", "Demir"));
+    }
+}
+

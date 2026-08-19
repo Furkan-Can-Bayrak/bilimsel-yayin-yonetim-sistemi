@@ -14,6 +14,7 @@ public class BlogDbContext : DbContext, IApplicationDbContext
 
     public DbSet<Manuscript> Manuscripts => Set<Manuscript>();
     public DbSet<ResearchArea> ResearchAreas => Set<ResearchArea>();
+    public DbSet<Institution> Institutions => Set<Institution>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Role> Roles => Set<Role>();
