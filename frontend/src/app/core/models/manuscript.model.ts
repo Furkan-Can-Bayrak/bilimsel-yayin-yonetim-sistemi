@@ -132,3 +132,8 @@ export interface ResearchArea {
   slug: string;
   manuscriptCount: number;
 }
+
+export interface CreateResearchAreaResult {
+  id: number;
+  slug: string;
+}

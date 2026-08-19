@@ -14,6 +14,9 @@
       @if (canCreate) {
         <a routerLink="/admin/manuscripts/new" class="btn primary">Yeni makale</a>
       }
+      @if (canManageResearchAreas) {
+        <a routerLink="/admin/research-areas" class="btn ghost">Araştırma alanları</a>
+      }
       <a routerLink="/admin/notifications" class="btn ghost">Bildirimler</a>
     </div>
   </header>

@@ -43,6 +43,7 @@ export class AdminManuscriptList implements OnInit {
   readonly canAssign = this.auth.hasPermission(Permissions.Reviews.Assign);
   readonly canViewReviews = this.auth.hasPermission(Permissions.Reviews.ViewAll);
   readonly isEditorPanel = this.auth.hasPermission(Permissions.Manuscripts.ViewAll);
+  readonly canManageResearchAreas = this.auth.hasPermission(Permissions.ResearchAreas.Manage);
 
   readonly manuscripts = signal<AdminManuscriptListItem[]>([]);
   readonly researchAreas = signal<ResearchArea[]>([]);

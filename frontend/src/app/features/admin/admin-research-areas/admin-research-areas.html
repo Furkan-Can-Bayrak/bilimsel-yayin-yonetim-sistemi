@@ -1,0 +1,105 @@
+<section class="page admin-page">
+  <header class="admin-head">
+    <div>
+      <h1>Araştırma alanları</h1>
+      <p class="lead">Makalelerin sınıflandığı alanlar. Ad değişince kalıcı bağlantı yeniden üretilir.</p>
+    </div>
+    <a routerLink="/admin" class="btn ghost">Makale listesine dön</a>
+  </header>
+
+  @if (canManage) {
+    <form class="create" (ngSubmit)="create()">
+      <label class="field grow">
+        <span>Yeni alan</span>
+        <input
+          type="text"
+          name="newName"
+          [(ngModel)]="newName"
+          maxlength="100"
+          placeholder="Örn. Yapay Zeka"
+          [disabled]="submitting()"
+        />
+      </label>
+      <button type="submit" class="btn primary" [disabled]="submitting() || !newName.trim()">
+        Ekle
+      </button>
+    </form>
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (items().length === 0) {
+    <p class="muted">Henüz araştırma alanı yok.</p>
+  } @else {
+    <p class="result-meta">{{ items().length }} alan</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ad</th>
+            <th>Kalıcı bağlantı</th>
+            <th>Makale</th>
+            @if (canManage) {
+              <th></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (area of items(); track area.id) {
+            <tr>
+              <td>
+                @if (canManage && editingId() === area.id) {
+                  <input
+                    type="text"
+                    name="editName"
+                    [(ngModel)]="editName"
+                    maxlength="100"
+                    [disabled]="submitting()"
+                  />
+                } @else {
+                  {{ area.name }}
+                }
+              </td>
+              <td class="muted">{{ area.slug }}</td>
+              <td>{{ area.manuscriptCount }}</td>
+              @if (canManage) {
+                <td class="actions">
+                  @if (editingId() === area.id) {
+                    <button
+                      type="button"
+                      class="btn primary"
+                      [disabled]="submitting() || !editName.trim()"
+                      (click)="saveEdit(area)"
+                    >
+                      Kaydet
+                    </button>
+                    <button type="button" class="btn ghost" [disabled]="submitting()" (click)="cancelEdit()">
+                      İptal
+                    </button>
+                  } @else {
+                    <button type="button" class="btn ghost" [disabled]="submitting()" (click)="startEdit(area)">
+                      Düzenle
+                    </button>
+                    <button
+                      type="button"
+                      class="btn danger"
+                      [disabled]="submitting() || area.manuscriptCount > 0"
+                      [title]="area.manuscriptCount > 0 ? 'Bağlı makale varken silinemez' : 'Sil'"
+                      (click)="remove(area)"
+                    >
+                      Sil
+                    </button>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
