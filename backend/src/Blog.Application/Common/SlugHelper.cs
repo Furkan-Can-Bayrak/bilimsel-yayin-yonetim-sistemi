@@ -14,19 +14,28 @@ public static partial class SlugHelper
       throw new ArgumentException("Slug kaynağı boş olamaz.", nameof(value));
     }
 
-    var normalized = value.Trim().ToLowerInvariant();
-    normalized = normalized.Normalize(NormalizationForm.FormD);
-    var sb = new StringBuilder();
+    var folded = new StringBuilder();
 
-    foreach (var c in normalized)
+    foreach (var c in value.Trim())
     {
-      if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+      if (TryMapTurkish(c, out var ascii))
       {
-        sb.Append(c);
+        folded.Append(ascii);
+        continue;
+      }
+
+      foreach (var d in c.ToString().Normalize(NormalizationForm.FormD))
+      {
+        if (CharUnicodeInfo.GetUnicodeCategory(d) == UnicodeCategory.NonSpacingMark)
+        {
+          continue;
+        }
+
+        folded.Append(char.ToLowerInvariant(d));
       }
     }
 
-    var slug = sb.ToString().Normalize(NormalizationForm.FormC);
+    var slug = folded.ToString();
     slug = NonAlphanumericRegex().Replace(slug, "-");
     slug = MultiDashRegex().Replace(slug, "-").Trim('-');
 
@@ -66,6 +75,26 @@ public static partial class SlugHelper
     }
 
     return slug;
+  }
+
+  /// <summary>
+  /// Invariant ToLower, İ (I+nokta) ve I/ı harflerini ASCII [a-z] dışına düşürür;
+  /// regex onları siler (İnsan → nsan). URL için Türkçe harfleri burada katlıyoruz.
+  /// </summary>
+  private static bool TryMapTurkish(char c, out char ascii)
+  {
+    ascii = c switch
+    {
+      'ç' or 'Ç' => 'c',
+      'ğ' or 'Ğ' => 'g',
+      'ı' or 'I' or 'İ' => 'i',
+      'ö' or 'Ö' => 'o',
+      'ş' or 'Ş' => 's',
+      'ü' or 'Ü' => 'u',
+      _ => '\0'
+    };
+
+    return ascii != '\0';
   }
 
   [GeneratedRegex(@"[^a-z0-9\-]+", RegexOptions.Compiled)]

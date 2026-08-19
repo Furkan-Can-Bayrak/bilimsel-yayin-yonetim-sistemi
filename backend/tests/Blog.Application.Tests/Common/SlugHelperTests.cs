@@ -22,6 +22,17 @@ public class SlugHelperTests
         Assert.Throws<ArgumentException>(() => SlugHelper.GenerateSlug(value!));
     }
 
+    [Theory]
+    [InlineData("İnsan", "insan")]
+    [InlineData("İİİİ", "iiii")]
+    [InlineData("Iğdır", "igdir")]
+    [InlineData("Şişli", "sisli")]
+    [InlineData("ıslak", "islak")]
+    public void GenerateSlug_folds_turkish_letters(string title, string expected)
+    {
+        Assert.Equal(expected, SlugHelper.GenerateSlug(title));
+    }
+
     [Fact]
     public void GenerateSlug_rejects_unusable_source()
     {
