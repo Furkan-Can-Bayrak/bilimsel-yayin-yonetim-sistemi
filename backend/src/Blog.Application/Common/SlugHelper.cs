@@ -1,19 +1,20 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Blog.Application.Common.Exceptions;
 
 namespace Blog.Application.Common;
 
 public static partial class SlugHelper
 {
-  public static string GenerateFromTitle(string title)
+  public static string GenerateSlug(string value, string propertyName = "Slug")
   {
-    if (string.IsNullOrWhiteSpace(title))
+    if (string.IsNullOrWhiteSpace(value))
     {
-      return "makale";
+      throw new ArgumentException("Slug kaynağı boş olamaz.", nameof(value));
     }
 
-    var normalized = title.Trim().ToLowerInvariant();
+    var normalized = value.Trim().ToLowerInvariant();
     normalized = normalized.Normalize(NormalizationForm.FormD);
     var sb = new StringBuilder();
 
@@ -29,7 +30,15 @@ public static partial class SlugHelper
     slug = NonAlphanumericRegex().Replace(slug, "-");
     slug = MultiDashRegex().Replace(slug, "-").Trim('-');
 
-    return string.IsNullOrEmpty(slug) ? "makale" : slug;
+    if (string.IsNullOrEmpty(slug))
+    {
+      throw new AppValidationException(new Dictionary<string, string[]>
+      {
+        [propertyName] = ["Bu metinden URL üretilemedi."]
+      });
+    }
+
+    return slug;
   }
 
   public static async Task<string> EnsureUniqueSlugAsync(

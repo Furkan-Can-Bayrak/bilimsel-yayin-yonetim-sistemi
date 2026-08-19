@@ -68,8 +68,8 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
         }
 
         var baseSlug = string.IsNullOrWhiteSpace(request.Slug)
-            ? SlugHelper.GenerateFromTitle(request.Title)
-            : SlugHelper.GenerateFromTitle(request.Slug);
+            ? SlugHelper.GenerateSlug(request.Title, nameof(request.Title))
+            : SlugHelper.GenerateSlug(request.Slug, nameof(request.Slug));
 
         if (baseSlug == "admin")
         {

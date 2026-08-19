@@ -34,8 +34,9 @@ public sealed class CreateResearchAreaCommandHandler
         CreateResearchAreaCommand request,
         CancellationToken cancellationToken)
     {
-        var source = string.IsNullOrWhiteSpace(request.Slug) ? request.Name : request.Slug!;
-        var baseSlug = SlugHelper.GenerateFromTitle(source);
+        var baseSlug = string.IsNullOrWhiteSpace(request.Slug)
+            ? SlugHelper.GenerateSlug(request.Name, nameof(request.Name))
+            : SlugHelper.GenerateSlug(request.Slug, nameof(request.Slug));
 
         var slug = await SlugHelper.EnsureUniqueSlugAsync(
             s => _db.ResearchAreas.AnyAsync(a => a.Slug == s, cancellationToken),
