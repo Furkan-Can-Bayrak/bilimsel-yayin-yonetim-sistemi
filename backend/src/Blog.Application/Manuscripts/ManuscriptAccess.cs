@@ -17,17 +17,17 @@ internal static class ManuscriptAccess
     public static bool CanView(int authorId, ICurrentUser user, bool isAssignedReviewer = false) =>
         CanViewAll(user) || user.UserId == authorId || isAssignedReviewer;
 
+    /// <summary>Kim: Update izni ve (yazar veya ViewAll).</summary>
     public static bool CanUpdate(int authorId, ICurrentUser user) =>
         user.HasPermission(Permissions.Manuscripts.Update) &&
         (user.UserId == authorId || CanViewAll(user));
 
+    /// <summary>
+    /// Ne zaman: ViewAll her durumda; yazar yalnız taslak/ret.
+    /// Kim olduğu burada bakılmaz; önce <see cref="CanUpdate"/> (403), sonra bu (409).
+    /// </summary>
     public static bool CanEditContent(Manuscript manuscript, ICurrentUser user)
     {
-        if (!CanUpdate(manuscript.AuthorId, user))
-        {
-            return false;
-        }
-
         if (CanViewAll(user))
         {
             return true;

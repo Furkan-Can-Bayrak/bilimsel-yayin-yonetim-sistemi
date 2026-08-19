@@ -73,7 +73,8 @@ public class ManuscriptsController : ControllerBase
                 body.Title,
                 body.Content,
                 body.Summary,
-                body.ResearchAreaId),
+                body.ResearchAreaId,
+                body.SubmitForReview),
             cancellationToken);
 
         return NoContent();
@@ -132,4 +133,5 @@ public sealed record UpdateManuscriptRequest(
     string Title,
     string Content,
     string? Summary,
-    int ResearchAreaId);
+    int ResearchAreaId,
+    bool SubmitForReview = false);

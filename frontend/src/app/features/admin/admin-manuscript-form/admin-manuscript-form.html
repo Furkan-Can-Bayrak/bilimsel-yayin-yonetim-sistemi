@@ -65,10 +65,10 @@
       <div class="row">
         @if (canEditContent) {
           <button type="submit" class="btn primary" [disabled]="submitting()">
-            {{ submitting() ? 'Kaydediliyor…' : 'Kaydet' }}
+            {{ submitting() ? 'Kaydediliyor…' : 'Taslağa kaydet' }}
           </button>
         }
-        @if (isEdit && canSubmit) {
+        @if (canSubmitForReview) {
           <button type="button" class="btn ghost" [disabled]="submitting()" (click)="submitForReview()">
             Değerlendirmeye gönder
           </button>

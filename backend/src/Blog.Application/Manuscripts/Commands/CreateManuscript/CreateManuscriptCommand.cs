@@ -2,6 +2,7 @@ using Blog.Application.Common;
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts.Dtos;
+using Blog.Domain.Authorization;
 using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -13,7 +14,8 @@ public sealed record CreateManuscriptCommand(
     string Title,
     string Content,
     string? Summary,
-    int ResearchAreaId) : IRequest<CreateManuscriptResult>;
+    int ResearchAreaId,
+    bool SubmitForReview = false) : IRequest<CreateManuscriptResult>;
 
 public sealed class CreateManuscriptCommandValidator : AbstractValidator<CreateManuscriptCommand>
 {
@@ -31,11 +33,16 @@ public sealed class CreateManuscriptCommandHandler
 {
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
+    private readonly INotificationService _notifications;
 
-    public CreateManuscriptCommandHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public CreateManuscriptCommandHandler(
+        IApplicationDbContext db,
+        ICurrentUser currentUser,
+        INotificationService notifications)
     {
         _db = db;
         _currentUser = currentUser;
+        _notifications = notifications;
     }
 
     public async Task<CreateManuscriptResult> Handle(
@@ -68,8 +75,27 @@ public sealed class CreateManuscriptCommandHandler
             Slug = slug
         };
 
+        if (request.SubmitForReview)
+        {
+            if (!_currentUser.HasPermission(Permissions.Manuscripts.Submit))
+            {
+                throw new ForbiddenException("Makaleyi değerlendirmeye gönderme izniniz yok.");
+            }
+
+            ManuscriptAccess.ApplyTransition(manuscript.Submit);
+        }
+
         _db.Manuscripts.Add(manuscript);
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (request.SubmitForReview)
+        {
+            await _notifications.NotifyAsync(
+                "Makale gönderildi",
+                $"\"{manuscript.Title}\" değerlendirmeye gönderildi.",
+                manuscript.Id,
+                cancellationToken);
+        }
 
         return new CreateManuscriptResult(manuscript.Id, manuscript.Slug);
     }

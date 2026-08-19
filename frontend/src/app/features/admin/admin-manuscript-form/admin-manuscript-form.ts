@@ -79,10 +79,16 @@ export class AdminManuscriptForm implements OnInit {
     return authorId != null && this.auth.userId() === authorId;
   }
 
-  get canSubmit(): boolean {
-    return this.auth.hasPermission(Permissions.Manuscripts.Submit) &&
-      this.isOwn &&
-      (this.status() === 'Draft' || this.status() === 'Rejected');
+  get canSubmitForReview(): boolean {
+    if (!this.auth.hasPermission(Permissions.Manuscripts.Submit)) {
+      return false;
+    }
+
+    if (!this.isEdit) {
+      return true;
+    }
+
+    return this.isOwn && (this.status() === 'Draft' || this.status() === 'Rejected');
   }
 
   get canDecide(): boolean {
@@ -132,6 +138,14 @@ export class AdminManuscriptForm implements OnInit {
   }
 
   submit(): void {
+    this.save(false);
+  }
+
+  submitForReview(): void {
+    this.save(true);
+  }
+
+  private save(submitForReview: boolean): void {
     if (!this.canEditContent || this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -143,6 +157,7 @@ export class AdminManuscriptForm implements OnInit {
       content: raw.content,
       summary: raw.summary.trim() ? raw.summary.trim() : null,
       researchAreaId: raw.researchAreaId,
+      submitForReview,
     };
 
     this.submitting.set(true);
@@ -166,10 +181,6 @@ export class AdminManuscriptForm implements OnInit {
     } else {
       this.manuscriptsApi.create(body).subscribe({ next: onOk, error: onErr });
     }
-  }
-
-  submitForReview(): void {
-    this.runWorkflow(this.manuscriptsApi.submit.bind(this.manuscriptsApi), 'Gönderildi', 'Submitted');
   }
 
   accept(): void {

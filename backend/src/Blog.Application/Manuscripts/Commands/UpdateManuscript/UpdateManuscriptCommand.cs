@@ -1,6 +1,7 @@
 using Blog.Application.Common;
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
+using Blog.Domain.Authorization;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,8 @@ public sealed record UpdateManuscriptCommand(
     string Title,
     string Content,
     string? Summary,
-    int ResearchAreaId) : IRequest;
+    int ResearchAreaId,
+    bool SubmitForReview = false) : IRequest;
 
 public sealed class UpdateManuscriptCommandValidator : AbstractValidator<UpdateManuscriptCommand>
 {
@@ -30,11 +32,16 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
 {
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
+    private readonly INotificationService _notifications;
 
-    public UpdateManuscriptCommandHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public UpdateManuscriptCommandHandler(
+        IApplicationDbContext db,
+        ICurrentUser currentUser,
+        INotificationService notifications)
     {
         _db = db;
         _currentUser = currentUser;
+        _notifications = notifications;
     }
 
     public async Task Handle(UpdateManuscriptCommand request, CancellationToken cancellationToken)
@@ -77,6 +84,26 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
         manuscript.ResearchAreaId = request.ResearchAreaId;
         manuscript.Slug = slug;
 
+        if (request.SubmitForReview)
+        {
+            if (!_currentUser.HasPermission(Permissions.Manuscripts.Submit) ||
+                _currentUser.UserId != manuscript.AuthorId)
+            {
+                throw new ForbiddenException("Yalnızca kendi makalenizi gönderebilirsiniz.");
+            }
+
+            ManuscriptAccess.ApplyTransition(manuscript.Submit);
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (request.SubmitForReview)
+        {
+            await _notifications.NotifyAsync(
+                "Makale gönderildi",
+                $"\"{manuscript.Title}\" değerlendirmeye gönderildi.",
+                manuscript.Id,
+                cancellationToken);
+        }
     }
 }

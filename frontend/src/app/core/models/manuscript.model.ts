@@ -92,6 +92,7 @@ export interface CreateManuscriptRequest {
   content: string;
   summary: string | null;
   researchAreaId: number;
+  submitForReview?: boolean;
 }
 
 export interface UpdateManuscriptRequest {
@@ -99,6 +100,7 @@ export interface UpdateManuscriptRequest {
   content: string;
   summary: string | null;
   researchAreaId: number;
+  submitForReview?: boolean;
 }
 
 export interface CreateManuscriptResult {
