@@ -58,7 +58,7 @@
       (click)="$event.stopPropagation()"
     >
       <h2 id="create-user-title">Kullanıcı ekle</h2>
-      <p class="modal-lead">E-posta ve şifre ile yeni hesap oluşturun; en az bir rol seçin.</p>
+      <p class="modal-lead">Şifre otomatik oluşturulup e-posta ile gönderilir.</p>
 
       @if (modalError()) {
         <p class="error">{{ modalError() }}</p>
@@ -67,56 +67,52 @@
       <form (ngSubmit)="create()">
         <div class="grid">
           <label class="field">
-            <span>E-posta</span>
-            <input
-              type="email"
-              name="email"
-              [(ngModel)]="email"
-              maxlength="200"
-              autocomplete="off"
-              [disabled]="submitting()"
-              required
-            />
-          </label>
-          <label class="field">
-            <span>Şifre</span>
-            <input
-              type="password"
-              name="password"
-              [(ngModel)]="password"
-              minlength="6"
-              autocomplete="new-password"
-              [disabled]="submitting()"
-              required
-            />
-          </label>
-          <label class="field">
-            <span>Ad</span>
+            <span>Ad <abbr class="req" title="Zorunlu">*</abbr></span>
             <input
               type="text"
               name="firstName"
               [(ngModel)]="firstName"
               maxlength="80"
+              [class.invalid]="isInvalid('firstName')"
               [disabled]="submitting()"
+              (ngModelChange)="clearFieldError('firstName')"
               required
             />
           </label>
           <label class="field">
-            <span>Soyad</span>
+            <span>Soyad <abbr class="req" title="Zorunlu">*</abbr></span>
             <input
               type="text"
               name="lastName"
               [(ngModel)]="lastName"
               maxlength="80"
+              [class.invalid]="isInvalid('lastName')"
               [disabled]="submitting()"
+              (ngModelChange)="clearFieldError('lastName')"
               required
             />
           </label>
           <label class="field">
-            <span>Unvan</span>
+            <span>Unvan <abbr class="req" title="Zorunlu">*</abbr></span>
             <select name="academicTitle" [(ngModel)]="academicTitle" [disabled]="submitting()">
               @for (opt of titleOptions; track opt.value) {
                 <option [ngValue]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            <span>Kurum <abbr class="req" title="Zorunlu">*</abbr></span>
+            <select
+              name="institutionId"
+              [(ngModel)]="institutionId"
+              [class.invalid]="isInvalid('institutionId')"
+              [disabled]="submitting()"
+              (ngModelChange)="clearFieldError('institutionId')"
+              required
+            >
+              <option [ngValue]="null">Kurum seçin</option>
+              @for (institution of institutions(); track institution.id) {
+                <option [ngValue]="institution.id">{{ institution.name }}</option>
               }
             </select>
           </label>
@@ -133,8 +129,20 @@
           </label>
         </div>
 
-        <fieldset class="roles">
-          <legend>Roller</legend>
+        <div class="field email-preview" aria-live="polite">
+          <span>E-posta</span>
+          <input
+            type="text"
+            class="email-value"
+            [value]="emailPreview()"
+            readonly
+            tabindex="-1"
+            placeholder="Ad, soyad ve kurum yazıldıkça oluşur"
+          />
+        </div>
+
+        <fieldset class="roles" [class.invalid]="isInvalid('roles')">
+          <legend>Roller <abbr class="req" title="Zorunlu">*</abbr></legend>
           <div class="role-list">
             @for (role of roles(); track role.id) {
               <label class="role-item">

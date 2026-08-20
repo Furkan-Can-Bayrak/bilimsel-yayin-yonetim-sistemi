@@ -5,9 +5,11 @@ import {
   AcademicTitle,
   AcademicTitleOptions,
   AcademicTitleValue,
+  InstitutionListItem,
   RoleListItem,
   UserListItem,
   academicTitleLabel,
+  buildEmailPreview,
 } from '../../../core/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
@@ -28,22 +30,42 @@ export class AdminUsers implements OnInit {
 
   readonly users = signal<UserListItem[]>([]);
   readonly roles = signal<RoleListItem[]>([]);
+  readonly institutions = signal<InstitutionListItem[]>([]);
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly modalOpen = signal(false);
   readonly error = signal<string | null>(null);
   readonly modalError = signal<string | null>(null);
+  readonly invalidFields = signal<ReadonlySet<string>>(new Set());
 
-  email = '';
-  password = '';
   firstName = '';
   lastName = '';
   academicTitle: AcademicTitleValue = AcademicTitle.Dr;
   orcid = '';
+  institutionId: number | null = null;
   selectedRoleIds = new Set<number>();
 
   ngOnInit(): void {
     this.reload();
+  }
+
+  emailPreview(): string {
+    const institution = this.institutions().find((i) => i.id === this.institutionId);
+    return buildEmailPreview(this.firstName, this.lastName, institution?.emailDomain);
+  }
+
+  isInvalid(field: string): boolean {
+    return this.invalidFields().has(field);
+  }
+
+  clearFieldError(field: string): void {
+    if (!this.invalidFields().has(field)) {
+      return;
+    }
+
+    const next = new Set(this.invalidFields());
+    next.delete(field);
+    this.invalidFields.set(next);
   }
 
   reload(): void {
@@ -65,6 +87,11 @@ export class AdminUsers implements OnInit {
       this.api.getRoles().subscribe({
         next: (data) => this.roles.set(data),
         error: () => this.error.set('Roller yüklenemedi.'),
+      });
+
+      this.api.getInstitutions().subscribe({
+        next: (data) => this.institutions.set(data),
+        error: () => this.error.set('Kurumlar yüklenemedi.'),
       });
     }
   }
@@ -95,6 +122,10 @@ export class AdminUsers implements OnInit {
     } else {
       this.selectedRoleIds.delete(roleId);
     }
+
+    if (this.selectedRoleIds.size > 0) {
+      this.clearFieldError('roles');
+    }
   }
 
   isRoleSelected(roleId: number): boolean {
@@ -106,30 +137,54 @@ export class AdminUsers implements OnInit {
       return;
     }
 
-    const email = this.email.trim();
-    const password = this.password;
     const firstName = this.firstName.trim();
     const lastName = this.lastName.trim();
     const orcid = this.orcid.trim();
     const roleIds = [...this.selectedRoleIds];
+    const selectedInstitutionId = this.institutionId;
 
-    if (!email || !password || !firstName || !lastName || roleIds.length === 0) {
-      this.modalError.set('E-posta, şifre, ad, soyad ve en az bir rol zorunludur.');
+    const missing: string[] = [];
+    const invalid = new Set<string>();
+
+    if (!firstName) {
+      missing.push('Ad');
+      invalid.add('firstName');
+    }
+    if (!lastName) {
+      missing.push('Soyad');
+      invalid.add('lastName');
+    }
+    if (selectedInstitutionId == null) {
+      missing.push('Kurum');
+      invalid.add('institutionId');
+    }
+    if (roleIds.length === 0) {
+      missing.push('en az bir rol');
+      invalid.add('roles');
+    }
+
+    this.invalidFields.set(invalid);
+
+    if (missing.length > 0) {
+      this.modalError.set(`${missing.join(', ')} zorunludur.`);
+      return;
+    }
+
+    if (selectedInstitutionId == null) {
       return;
     }
 
     this.submitting.set(true);
     this.modalError.set(null);
+    this.invalidFields.set(new Set());
 
     this.api
       .create({
-        email,
-        password,
         firstName,
         lastName,
         academicTitle: this.academicTitle,
         orcid: orcid || null,
-        institutionId: null,
+        institutionId: selectedInstitutionId,
         roleIds,
       })
       .subscribe({
@@ -147,13 +202,13 @@ export class AdminUsers implements OnInit {
   }
 
   private resetForm(): void {
-    this.email = '';
-    this.password = '';
     this.firstName = '';
     this.lastName = '';
     this.academicTitle = AcademicTitle.Dr;
     this.orcid = '';
+    this.institutionId = null;
     this.selectedRoleIds = new Set();
+    this.invalidFields.set(new Set());
   }
 
   private readError(err: unknown): string | null {

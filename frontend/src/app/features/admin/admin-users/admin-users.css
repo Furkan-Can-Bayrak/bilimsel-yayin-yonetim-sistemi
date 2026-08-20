@@ -64,6 +64,19 @@
   box-sizing: border-box;
 }
 
+.field input.invalid,
+.field select.invalid,
+.roles.invalid {
+  border-color: #c0392b;
+  box-shadow: 0 0 0 1px #c0392b;
+}
+
+.roles.invalid {
+  border: 1px solid #c0392b;
+  border-radius: 6px;
+  padding: 0.55rem 0.65rem 0.65rem;
+}
+
 .roles {
   margin: 0.85rem 0 0;
   padding: 0;
@@ -158,6 +171,28 @@ tr:last-child td {
 
 .error {
   color: #9b1c1c;
+}
+
+.req {
+  color: #9b1c1c;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.email-preview {
+  margin-top: 0.85rem;
+}
+
+.email-preview .email-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: color-mix(in srgb, var(--surface) 92%, var(--line));
+  color: var(--ink);
+  cursor: default;
+}
+
+.email-preview .email-value::placeholder {
+  font-family: inherit;
+  color: var(--muted);
 }
 
 .modal-backdrop {
