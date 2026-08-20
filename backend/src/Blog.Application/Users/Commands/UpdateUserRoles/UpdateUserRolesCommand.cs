@@ -7,14 +7,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Users.Commands.UpdateUserRoles;
 
-public sealed record UpdateUserRolesCommand(int UserId, int RoleId) : IRequest;
+public sealed record UpdateUserRolesCommand(int UserId, IReadOnlyList<int> RoleIds) : IRequest;
 
 public sealed class UpdateUserRolesCommandValidator : AbstractValidator<UpdateUserRolesCommand>
 {
     public UpdateUserRolesCommandValidator()
     {
         RuleFor(x => x.UserId).GreaterThan(0);
-        RuleFor(x => x.RoleId).GreaterThan(0);
+        RuleFor(x => x.RoleIds)
+            .NotNull()
+            .Must(ids => ids.Count > 0)
+            .WithMessage("En az bir rol seçilmelidir.");
     }
 }
 
@@ -38,27 +41,33 @@ public sealed class UpdateUserRolesCommandHandler : IRequestHandler<UpdateUserRo
             throw new NotFoundException($"Kullanıcı bulunamadı: {request.UserId}");
         }
 
-        var roleExists = await _db.Roles
-            .AnyAsync(r => r.Id == request.RoleId, cancellationToken);
+        var roleIds = request.RoleIds.Distinct().ToArray();
+        var existingRoleCount = await _db.Roles
+            .CountAsync(r => roleIds.Contains(r.Id), cancellationToken);
 
-        if (!roleExists)
+        if (existingRoleCount != roleIds.Length)
         {
-            throw new ConflictException("Seçilen rol bulunamadı.");
+            throw new ConflictException("Seçilen rollerden biri bulunamadı.");
         }
 
-        if (user.UserRoles.Count == 1 && user.UserRoles.First().RoleId == request.RoleId)
+        var current = user.UserRoles.Select(ur => ur.RoleId).OrderBy(id => id).ToArray();
+        var next = roleIds.OrderBy(id => id).ToArray();
+        if (current.SequenceEqual(next))
         {
             return;
         }
 
         user.UserRoles.Clear();
-        user.UserRoles.Add(new UserRole
+        foreach (var roleId in roleIds)
         {
-            UserId = user.Id,
-            RoleId = request.RoleId
-        });
-        user.SecurityVersion += 1;
+            user.UserRoles.Add(new UserRole
+            {
+                UserId = user.Id,
+                RoleId = roleId
+            });
+        }
 
+        user.SecurityVersion += 1;
         await _db.SaveChangesAsync(cancellationToken);
     }
 }

@@ -37,6 +37,10 @@ export class AdminUsers implements OnInit {
   readonly error = signal<string | null>(null);
   readonly modalError = signal<string | null>(null);
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
+  readonly busyUserId = signal<number | null>(null);
+  readonly roleEditorUserId = signal<number | null>(null);
+  readonly roleEditorError = signal<string | null>(null);
+  roleEditorSelectedIds = new Set<number>();
 
   firstName = '';
   lastName = '';
@@ -52,6 +56,146 @@ export class AdminUsers implements OnInit {
   emailPreview(): string {
     const institution = this.institutions().find((i) => i.id === this.institutionId);
     return buildEmailPreview(this.firstName, this.lastName, institution?.emailDomain);
+  }
+
+  openRoleEditor(user: UserListItem, event: MouseEvent): void {
+    event.stopPropagation();
+    if (!this.canManage || this.busyUserId() === user.id) {
+      return;
+    }
+
+    this.roleEditorUserId.set(user.id);
+    this.roleEditorSelectedIds = new Set(user.roleIds);
+    this.roleEditorError.set(null);
+  }
+
+  closeRoleEditor(): void {
+    if (this.busyUserId() != null) {
+      return;
+    }
+
+    this.roleEditorUserId.set(null);
+    this.roleEditorSelectedIds = new Set();
+    this.roleEditorError.set(null);
+  }
+
+  isRoleEditorOpen(userId: number): boolean {
+    return this.roleEditorUserId() === userId;
+  }
+
+  isEditorRoleSelected(roleId: number): boolean {
+    return this.roleEditorSelectedIds.has(roleId);
+  }
+
+  toggleEditorRole(roleId: number, checked: boolean): void {
+    if (checked) {
+      this.roleEditorSelectedIds.add(roleId);
+    } else {
+      this.roleEditorSelectedIds.delete(roleId);
+    }
+  }
+
+  saveRoleEditor(user: UserListItem): void {
+    if (!this.canManage) {
+      return;
+    }
+
+    const roleIds = [...this.roleEditorSelectedIds];
+    if (roleIds.length === 0) {
+      this.roleEditorError.set('En az bir rol seçilmelidir.');
+      return;
+    }
+
+    const current = [...user.roleIds].sort((a, b) => a - b);
+    const next = [...roleIds].sort((a, b) => a - b);
+    if (current.length === next.length && current.every((id, i) => id === next[i])) {
+      this.closeRoleEditor();
+      return;
+    }
+
+    this.busyUserId.set(user.id);
+    this.roleEditorError.set(null);
+    this.error.set(null);
+
+    this.api.updateRoles(user.id, roleIds).subscribe({
+      next: () => {
+        this.busyUserId.set(null);
+        this.closeRoleEditor();
+        this.reload();
+      },
+      error: (err: unknown) => {
+        this.busyUserId.set(null);
+        this.roleEditorError.set(this.readError(err) ?? 'Rol güncellenemedi.');
+      },
+    });
+  }
+
+  titleValue(value: UserListItem['academicTitle'] | string | number): AcademicTitleValue {
+    if (typeof value === 'number') {
+      const byNumber: Record<number, AcademicTitleValue> = {
+        1: 'ProfDr',
+        2: 'DocDr',
+        3: 'DrOgrUyesi',
+        4: 'OgrGor',
+        5: 'ArsGor',
+        6: 'Dr',
+      };
+      return byNumber[value] ?? AcademicTitle.Dr;
+    }
+
+    return AcademicTitleOptions.some((o) => o.value === value)
+      ? (value as AcademicTitleValue)
+      : AcademicTitle.Dr;
+  }
+
+  changeAcademicTitle(user: UserListItem, next: AcademicTitleValue): void {
+    if (!this.canManage || this.busyUserId() === user.id) {
+      return;
+    }
+
+    const current = this.titleValue(user.academicTitle);
+    if (current === next) {
+      return;
+    }
+
+    this.busyUserId.set(user.id);
+    this.error.set(null);
+
+    this.api.updateAcademicTitle(user.id, next).subscribe({
+      next: () => {
+        this.users.update((list) =>
+          list.map((u) => (u.id === user.id ? { ...u, academicTitle: next } : u)),
+        );
+        this.busyUserId.set(null);
+      },
+      error: (err: unknown) => {
+        this.busyUserId.set(null);
+        this.error.set(this.readError(err) ?? 'Unvan güncellenemedi.');
+      },
+    });
+  }
+
+  toggleActive(user: UserListItem): void {
+    if (!this.canManage || this.busyUserId() === user.id) {
+      return;
+    }
+
+    const next = !user.isActive;
+    this.busyUserId.set(user.id);
+    this.error.set(null);
+
+    this.api.updateActiveStatus(user.id, next).subscribe({
+      next: () => {
+        this.users.update((list) =>
+          list.map((u) => (u.id === user.id ? { ...u, isActive: next } : u)),
+        );
+        this.busyUserId.set(null);
+      },
+      error: (err: unknown) => {
+        this.busyUserId.set(null);
+        this.error.set(this.readError(err) ?? 'Durum güncellenemedi.');
+      },
+    });
   }
 
   isInvalid(field: string): boolean {
@@ -83,12 +227,17 @@ export class AdminUsers implements OnInit {
       },
     });
 
-    if (this.canManage) {
-      this.api.getRoles().subscribe({
-        next: (data) => this.roles.set(data),
-        error: () => this.error.set('Roller yüklenemedi.'),
-      });
+    // Rol dropdown her zaman lazım (tablo + create modal).
+    this.api.getRoles().subscribe({
+      next: (data) => this.roles.set(data),
+      error: () => {
+        if (this.canManage) {
+          this.error.set('Roller yüklenemedi.');
+        }
+      },
+    });
 
+    if (this.canManage) {
       this.api.getInstitutions().subscribe({
         next: (data) => this.institutions.set(data),
         error: () => this.error.set('Kurumlar yüklenemedi.'),
@@ -101,6 +250,7 @@ export class AdminUsers implements OnInit {
       return;
     }
 
+    this.closeRoleEditor();
     this.resetForm();
     this.modalError.set(null);
     this.modalOpen.set(true);

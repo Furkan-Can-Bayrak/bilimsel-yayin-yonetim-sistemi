@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  AcademicTitleValue,
   CreateUserRequest,
   CreateUserResult,
   InstitutionListItem,
@@ -25,6 +26,18 @@ export class UserService {
 
   create(body: CreateUserRequest): Observable<CreateUserResult> {
     return this.http.post<CreateUserResult>(this.usersUrl, body);
+  }
+
+  updateRoles(userId: number, roleIds: number[]): Observable<void> {
+    return this.http.put<void>(`${this.usersUrl}/${userId}/roles`, { roleIds });
+  }
+
+  updateAcademicTitle(userId: number, academicTitle: AcademicTitleValue): Observable<void> {
+    return this.http.put<void>(`${this.usersUrl}/${userId}/academic-title`, { academicTitle });
+  }
+
+  updateActiveStatus(userId: number, isActive: boolean): Observable<void> {
+    return this.http.put<void>(`${this.usersUrl}/${userId}/active`, { isActive });
   }
 
   getRoles(): Observable<RoleListItem[]> {

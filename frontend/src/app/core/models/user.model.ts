@@ -1,14 +1,20 @@
-/** Backend AcademicTitle enum değerleriyle birebir. */
-export const AcademicTitle = {
-  ProfDr: 1,
-  DocDr: 2,
-  DrOgrUyesi: 3,
-  OgrGor: 4,
-  ArsGor: 5,
-  Dr: 6,
-} as const;
+/** API JsonStringEnumConverter ile AcademicTitle adlarını string gönderir. */
+export type AcademicTitleValue =
+  | 'ProfDr'
+  | 'DocDr'
+  | 'DrOgrUyesi'
+  | 'OgrGor'
+  | 'ArsGor'
+  | 'Dr';
 
-export type AcademicTitleValue = (typeof AcademicTitle)[keyof typeof AcademicTitle];
+export const AcademicTitle = {
+  ProfDr: 'ProfDr',
+  DocDr: 'DocDr',
+  DrOgrUyesi: 'DrOgrUyesi',
+  OgrGor: 'OgrGor',
+  ArsGor: 'ArsGor',
+  Dr: 'Dr',
+} as const satisfies Record<AcademicTitleValue, AcademicTitleValue>;
 
 export const AcademicTitleOptions: ReadonlyArray<{ value: AcademicTitleValue; label: string }> = [
   { value: AcademicTitle.ProfDr, label: 'Prof. Dr.' },
@@ -26,6 +32,7 @@ export interface UserListItem {
   lastName: string;
   academicTitle: AcademicTitleValue;
   isActive: boolean;
+  roleIds: number[];
   roleNames: string[];
 }
 
@@ -54,7 +61,24 @@ export interface InstitutionListItem {
   emailDomain: string;
 }
 
-export function academicTitleLabel(value: AcademicTitleValue): string {
+export function academicTitleLabel(value: AcademicTitleValue | string | number | null | undefined): string {
+  if (value == null) {
+    return 'Dr.';
+  }
+
+  if (typeof value === 'number') {
+    const byNumber: Record<number, AcademicTitleValue> = {
+      1: 'ProfDr',
+      2: 'DocDr',
+      3: 'DrOgrUyesi',
+      4: 'OgrGor',
+      5: 'ArsGor',
+      6: 'Dr',
+    };
+    const name = byNumber[value];
+    return AcademicTitleOptions.find((o) => o.value === name)?.label ?? 'Dr.';
+  }
+
   return AcademicTitleOptions.find((o) => o.value === value)?.label ?? 'Dr.';
 }
 

@@ -104,7 +104,7 @@
 }
 
 .table-wrap {
-  overflow-x: auto;
+  overflow: visible;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: color-mix(in srgb, var(--surface) 80%, white);
@@ -132,8 +132,126 @@ th {
   font-weight: 600;
 }
 
-tr:last-child td {
-  border-bottom: none;
+td .title-select {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface) 85%, white);
+  color: var(--ink);
+  max-width: 11rem;
+  cursor: pointer;
+}
+
+td .title-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.status-toggle {
+  --toggle-w: 2.6rem;
+  --toggle-h: 1.45rem;
+  --knob: 1.1rem;
+  position: relative;
+  width: var(--toggle-w);
+  height: var(--toggle-h);
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #b0b0b0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  vertical-align: middle;
+}
+
+.status-toggle.on {
+  background: #2f9e44;
+}
+
+.status-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.status-knob {
+  position: absolute;
+  top: 50%;
+  left: 0.18rem;
+  width: var(--knob);
+  height: var(--knob);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+  transform: translateY(-50%);
+  transition: left 0.2s ease;
+}
+
+.status-toggle.on .status-knob {
+  left: calc(100% - var(--knob) - 0.18rem);
+}
+
+td .role-cell {
+  position: relative;
+  min-width: 9rem;
+}
+
+td .role-trigger {
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface) 85%, white);
+  color: var(--ink);
+  cursor: pointer;
+  max-width: 14rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td .role-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.role-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+}
+
+.role-popover {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 16;
+  min-width: 11.5rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgb(28 24 20 / 16%);
+}
+
+.role-popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.role-popover-error {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.role-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
 }
 
 .btn {

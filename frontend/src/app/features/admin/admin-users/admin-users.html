@@ -2,7 +2,7 @@
   <header class="admin-head">
     <div>
       <h1>Kullanıcılar</h1>
-      <p class="lead">Sisteme giriş yapabilecek hesapları yönetin. Yeni kullanıcı yalnızca yetkili kişiler ekleyebilir.</p>
+      <p class="lead">Sisteme giriş yapabilecek hesapları yönetin.</p>
     </div>
     <div class="head-actions">
       @if (canManage) {
@@ -37,9 +37,91 @@
             <tr>
               <td>{{ user.firstName }} {{ user.lastName }}</td>
               <td>{{ user.email }}</td>
-              <td>{{ titleLabel(user.academicTitle) }}</td>
-              <td>{{ user.roleNames.join(', ') }}</td>
-              <td>{{ user.isActive ? 'Aktif' : 'Pasif' }}</td>
+              <td>
+                @if (canManage) {
+                  <select
+                    class="title-select"
+                    [ngModel]="titleValue(user.academicTitle)"
+                    [disabled]="busyUserId() === user.id"
+                    (ngModelChange)="changeAcademicTitle(user, $event)"
+                  >
+                    @for (opt of titleOptions; track opt.value) {
+                      <option [ngValue]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                } @else {
+                  {{ titleLabel(user.academicTitle) }}
+                }
+              </td>
+              <td>
+                @if (canManage) {
+                  <div class="role-cell" (click)="$event.stopPropagation()">
+                    <button
+                      type="button"
+                      class="role-trigger"
+                      [disabled]="busyUserId() === user.id"
+                      (click)="openRoleEditor(user, $event)"
+                    >
+                      {{ user.roleNames.length ? user.roleNames.join(', ') : 'Rol seç' }}
+                    </button>
+
+                    @if (isRoleEditorOpen(user.id)) {
+                      <div class="role-popover" role="dialog" aria-label="Rolleri düzenle">
+                        @if (roleEditorError()) {
+                          <p class="error role-popover-error">{{ roleEditorError() }}</p>
+                        }
+                        <div class="role-popover-list">
+                          @for (role of roles(); track role.id) {
+                            <label class="role-item">
+                              <input
+                                type="checkbox"
+                                [checked]="isEditorRoleSelected(role.id)"
+                                [disabled]="busyUserId() === user.id"
+                                (change)="toggleEditorRole(role.id, $any($event.target).checked)"
+                              />
+                              <span>{{ role.name }}</span>
+                            </label>
+                          }
+                        </div>
+                        <div class="role-popover-actions">
+                          <button
+                            type="button"
+                            class="btn ghost"
+                            [disabled]="busyUserId() === user.id"
+                            (click)="closeRoleEditor()"
+                          >
+                            İptal
+                          </button>
+                          <button
+                            type="button"
+                            class="btn primary"
+                            [disabled]="busyUserId() === user.id"
+                            (click)="saveRoleEditor(user)"
+                          >
+                            Kaydet
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  {{ user.roleNames.join(', ') }}
+                }
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="status-toggle"
+                  [class.on]="user.isActive"
+                  [disabled]="!canManage || busyUserId() === user.id"
+                  [attr.aria-pressed]="user.isActive"
+                  [attr.aria-label]="user.isActive ? 'Aktif' : 'Pasif'"
+                  [title]="user.isActive ? 'Aktif' : 'Pasif'"
+                  (click)="toggleActive(user)"
+                >
+                  <span class="status-knob" aria-hidden="true"></span>
+                </button>
+              </td>
             </tr>
           }
         </tbody>
@@ -47,6 +129,10 @@
     </div>
   }
 </section>
+
+@if (roleEditorUserId() != null) {
+  <div class="role-backdrop" (click)="closeRoleEditor()"></div>
+}
 
 @if (modalOpen()) {
   <div class="modal-backdrop" (click)="closeCreate()">
