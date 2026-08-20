@@ -1,6 +1,7 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts;
+using Blog.Domain.Authorization;
 using Blog.Domain.Enums;
 using FluentValidation;
 using MediatR;
@@ -61,10 +62,12 @@ public sealed class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCom
         await _db.SaveChangesAsync(cancellationToken);
 
         var title = review.Manuscript?.Title ?? "Makale";
-        await _notifications.NotifyAsync(
+        await _notifications.NotifyUsersWithPermissionAsync(
+            Permissions.Manuscripts.Decide,
             "Hakem raporu geldi",
             $"\"{title}\" için değerlendirme teslim edildi.",
             review.ManuscriptId,
+            excludeUserId: review.ReviewerId,
             cancellationToken);
     }
 }

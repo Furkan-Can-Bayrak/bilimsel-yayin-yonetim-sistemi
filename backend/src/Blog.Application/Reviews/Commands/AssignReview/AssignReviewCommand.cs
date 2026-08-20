@@ -89,7 +89,8 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
         _db.Reviews.Add(review);
         await _db.SaveChangesAsync(cancellationToken);
 
-        await _notifications.NotifyAsync(
+        await _notifications.NotifyUsersAsync(
+            [reviewer.Id],
             "Size makale atandı",
             $"\"{manuscript.Title}\" değerlendirmesi size atandı.",
             manuscript.Id,

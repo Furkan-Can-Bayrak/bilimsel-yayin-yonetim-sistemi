@@ -13,7 +13,8 @@ internal static class ManuscriptPublication
         Manuscript manuscript,
         CancellationToken cancellationToken)
     {
-        await notifications.NotifyAsync(
+        await notifications.NotifyUsersAsync(
+            [manuscript.AuthorId],
             "Makale yayınlandı",
             $"\"{manuscript.Title}\" yayınlandı.",
             manuscript.Id,

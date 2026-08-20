@@ -34,6 +34,7 @@ export class AdminNotifications implements OnInit {
     this.api.getAll().subscribe({
       next: (data) => {
         this.items.set(data);
+        this.api.syncUnreadFrom(data);
         this.loading.set(false);
       },
       error: () => {
@@ -52,7 +53,9 @@ export class AdminNotifications implements OnInit {
     this.api.markRead(item.id).subscribe({
       next: () => {
         this.busyId.set(null);
-        this.reload();
+        this.items.update((list) =>
+          list.map((n) => (n.id === item.id ? { ...n, isRead: true } : n)),
+        );
       },
       error: () => {
         this.busyId.set(null);

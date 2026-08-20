@@ -139,9 +139,14 @@ namespace Blog.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAtUtc");
+
+                    b.HasIndex("UserId", "IsRead");
 
                     b.ToTable("Notifications", (string)null);
                 });
@@ -385,6 +390,17 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.Navigation("Author");
 
                     b.Navigation("ResearchArea");
+                });
+
+            modelBuilder.Entity("Blog.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("Blog.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Blog.Domain.Entities.Review", b =>

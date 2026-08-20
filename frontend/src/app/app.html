@@ -35,7 +35,17 @@
           <a routerLink="/admin/users" routerLinkActive="active">Kullanıcılar</a>
         }
         @if (auth.hasPermission(Permissions.Notifications.View)) {
-          <a routerLink="/admin/notifications" routerLinkActive="active">Bildirimler</a>
+          <a routerLink="/admin/notifications" routerLinkActive="active" class="nav-with-badge">
+            Bildirimler
+            @if (notifications.unreadCount() > 0) {
+              <span
+                class="nav-badge"
+                [attr.aria-label]="notifications.unreadCount() + ' okunmamış bildirim'"
+              >
+                {{ notifications.unreadCount() > 99 ? '99+' : notifications.unreadCount() }}
+              </span>
+            }
+          </a>
         }
       } @else {
         <a routerLink="/admin/login" routerLinkActive="active" class="login-link">Giriş</a>

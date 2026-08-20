@@ -21,5 +21,11 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .HasMaxLength(1000);
 
         builder.HasIndex(n => n.CreatedAtUtc);
+        builder.HasIndex(n => new { n.UserId, n.IsRead });
+
+        builder.HasOne(n => n.User)
+            .WithMany()
+            .HasForeignKey(n => n.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

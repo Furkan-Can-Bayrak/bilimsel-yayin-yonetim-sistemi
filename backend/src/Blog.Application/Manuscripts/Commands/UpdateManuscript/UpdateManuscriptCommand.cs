@@ -131,10 +131,12 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
 
         if (request.SubmitForReview)
         {
-            await _notifications.NotifyAsync(
-                "Makale gönderildi",
+            await _notifications.NotifyUsersWithPermissionAsync(
+                Permissions.Manuscripts.Decide,
+                "Yeni makale geldi",
                 $"\"{manuscript.Title}\" değerlendirmeye gönderildi.",
                 manuscript.Id,
+                excludeUserId: manuscript.AuthorId,
                 cancellationToken);
         }
     }

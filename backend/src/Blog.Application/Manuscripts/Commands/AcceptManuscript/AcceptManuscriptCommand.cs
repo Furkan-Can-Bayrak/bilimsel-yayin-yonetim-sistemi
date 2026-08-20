@@ -31,7 +31,8 @@ public sealed class AcceptManuscriptCommandHandler : IRequestHandler<AcceptManus
         ManuscriptAccess.ApplyTransition(manuscript.Accept);
         await _db.SaveChangesAsync(cancellationToken);
 
-        await _notifications.NotifyAsync(
+        await _notifications.NotifyUsersAsync(
+            [manuscript.AuthorId],
             "Makale kabul edildi",
             $"\"{manuscript.Title}\" yayına hazır olarak kabul edildi.",
             manuscript.Id,

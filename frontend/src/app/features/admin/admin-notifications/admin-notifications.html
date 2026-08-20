@@ -2,7 +2,7 @@
   <header class="admin-head">
     <div>
       <h1>Bildirimler</h1>
-      <p class="lead">Yayın kararları ve sistem olayları.</p>
+      <p class="lead">Size özel sistem bildirimleri.</p>
     </div>
     @if (canViewAll) {
       <a routerLink="/admin" class="btn ghost">Makale listesine dön</a>
@@ -14,7 +14,7 @@
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (items().length === 0) {
-    <p class="muted">Henüz bildirim yok. Bir makaleyi yayınlayınca burada görünür.</p>
+    <p class="muted">Henüz bildiriminiz yok.</p>
   } @else {
     <ul class="list">
       @for (item of items(); track item.id) {

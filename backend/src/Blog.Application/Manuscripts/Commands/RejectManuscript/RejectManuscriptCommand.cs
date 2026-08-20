@@ -31,9 +31,10 @@ public sealed class RejectManuscriptCommandHandler : IRequestHandler<RejectManus
         ManuscriptAccess.ApplyTransition(manuscript.Reject);
         await _db.SaveChangesAsync(cancellationToken);
 
-        await _notifications.NotifyAsync(
+        await _notifications.NotifyUsersAsync(
+            [manuscript.AuthorId],
             "Makale reddedildi",
-            $"\"{manuscript.Title}\" reddedildi. Yazar düzeltip yeniden gönderebilir.",
+            $"\"{manuscript.Title}\" reddedildi. Düzeltip yeniden gönderebilirsiniz.",
             manuscript.Id,
             cancellationToken);
     }

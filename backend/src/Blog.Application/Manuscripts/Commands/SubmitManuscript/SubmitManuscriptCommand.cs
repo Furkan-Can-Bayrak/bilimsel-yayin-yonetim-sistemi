@@ -1,5 +1,6 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
+using Blog.Domain.Authorization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,10 +50,12 @@ public sealed class SubmitManuscriptCommandHandler : IRequestHandler<SubmitManus
         ManuscriptAccess.ApplyTransition(manuscript.Submit);
         await _db.SaveChangesAsync(cancellationToken);
 
-        await _notifications.NotifyAsync(
-            "Makale gönderildi",
+        await _notifications.NotifyUsersWithPermissionAsync(
+            Permissions.Manuscripts.Decide,
+            "Yeni makale geldi",
             $"\"{manuscript.Title}\" değerlendirmeye gönderildi.",
             manuscript.Id,
+            excludeUserId: manuscript.AuthorId,
             cancellationToken);
     }
 }
