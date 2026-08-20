@@ -4,15 +4,6 @@
   padding: 2rem 1.25rem 4rem;
 }
 
-.back {
-  margin: 0 0 0.75rem;
-}
-
-.back a {
-  text-decoration: none;
-  color: var(--muted);
-}
-
 .form-page h1 {
   font-family: var(--serif);
   font-size: clamp(1.5rem, 3vw, 1.9rem);
