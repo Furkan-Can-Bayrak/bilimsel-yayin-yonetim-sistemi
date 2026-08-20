@@ -1,5 +1,6 @@
 using Blog.API.Infrastructure.Authorization;
 using Blog.Application.Users.Commands.CreateUser;
+using Blog.Application.Users.Commands.UpdateUserRoles;
 using Blog.Application.Users.Queries.GetUsers;
 using Blog.Domain.Authorization;
 using MediatR;
@@ -35,4 +36,17 @@ public class UsersController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return Created($"/api/users/{result.Id}", result);
     }
+
+    [HasPermission(Permissions.Users.Manage)]
+    [HttpPut("{id:int}/roles")]
+    public async Task<IActionResult> UpdateRoles(
+        int id,
+        [FromBody] UpdateUserRolesRequest body,
+        CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new UpdateUserRolesCommand(id, body.RoleId), cancellationToken);
+        return NoContent();
+    }
 }
+
+public sealed record UpdateUserRolesRequest(int RoleId);

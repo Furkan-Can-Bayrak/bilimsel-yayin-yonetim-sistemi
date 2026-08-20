@@ -9,6 +9,7 @@ public sealed record UserListItemDto(
     string LastName,
     AcademicTitle AcademicTitle,
     bool IsActive,
+    IReadOnlyList<int> RoleIds,
     IReadOnlyList<string> RoleNames);
 
 public sealed record CreateUserResult(int Id, string Email);

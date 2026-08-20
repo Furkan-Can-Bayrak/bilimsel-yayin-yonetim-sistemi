@@ -21,21 +21,33 @@ public sealed class GetUsersQueryHandler
         GetUsersQuery request,
         CancellationToken cancellationToken)
     {
-        return await _db.Users
+        var rows = await _db.Users
             .AsNoTracking()
             .OrderBy(u => u.LastName)
             .ThenBy(u => u.FirstName)
-            .Select(u => new UserListItemDto(
+            .Select(u => new
+            {
                 u.Id,
                 u.Email,
                 u.FirstName,
                 u.LastName,
                 u.AcademicTitle,
                 u.IsActive,
-                u.UserRoles
-                    .Select(ur => ur.Role!.Name)
-                    .OrderBy(name => name)
-                    .ToList()))
+                Roles = u.UserRoles
+                    .OrderBy(ur => ur.Role!.Name)
+                    .Select(ur => new { ur.RoleId, Name = ur.Role!.Name })
+                    .ToList()
+            })
             .ToListAsync(cancellationToken);
+
+        return rows.ConvertAll(u => new UserListItemDto(
+            u.Id,
+            u.Email,
+            u.FirstName,
+            u.LastName,
+            u.AcademicTitle,
+            u.IsActive,
+            u.Roles.ConvertAll(r => r.RoleId),
+            u.Roles.ConvertAll(r => r.Name)));
     }
 }
