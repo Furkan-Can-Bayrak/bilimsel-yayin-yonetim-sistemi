@@ -108,33 +108,3 @@
 .back a:hover {
   color: var(--accent);
 }
-
-.demo {
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--line);
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.demo p {
-  margin: 0 0 0.35rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-}
-
-.demo ul {
-  margin: 0;
-  padding-left: 1.1rem;
-  line-height: 1.55;
-}
-
-.demo-password {
-  margin: 0.55rem 0 0 !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-  font-size: 0.8rem !important;
-  font-weight: 400 !important;
-}

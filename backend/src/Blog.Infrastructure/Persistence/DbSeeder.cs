@@ -14,6 +14,9 @@ public static class DbSeeder
     private const string ReviewerRoleName = "Hakem";
     private const string AuthorRoleName = "Yazar";
 
+    private const string DefaultAdminEmail = "fcbayrak@firat.edu.tr";
+    private const string AdminInstitutionName = "Fırat Üniversitesi";
+
     public static async Task SeedAsync(
         BlogDbContext context,
         IConfiguration configuration,
@@ -25,7 +28,8 @@ public static class DbSeeder
         await SeedRolesAsync(context, cancellationToken);
         await SyncSystemRolePermissionsAsync(context, cancellationToken);
         await SeedInstitutionsAsync(context, cancellationToken);
-        await SeedUsersAsync(context, configuration, cancellationToken);
+        await ResetToSingleAdminAsync(context, configuration, cancellationToken);
+        await EnsureAdminUserAsync(context, configuration, cancellationToken);
         await SyncDevelopmentPasswordsAsync(context, configuration, cancellationToken);
     }
 
@@ -148,7 +152,7 @@ public static class DbSeeder
 
     /// <summary>
     /// Admin rolünün her zaman tüm izinlere sahip olmasını garanti eder. Kodda yeni bir izin
-    /// tanımlandığında Admin onu otomatik kazanır; panelden çıkarılsa bile yeniden eklenir.
+    /// eklendiğinde panelden elle vermeye gerek kalmaz.
     /// </summary>
     private static async Task GrantAllPermissionsToAdminAsync(
         BlogDbContext context,
@@ -168,18 +172,17 @@ public static class DbSeeder
             .Select(rp => rp.PermissionId)
             .ToHashSet();
 
-        var missingPermissionIds = await context.Permissions
-            .Where(p => !grantedPermissionIds.Contains(p.Id))
+        var allPermissionIds = await context.Permissions
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);
 
-        if (missingPermissionIds.Count == 0)
+        foreach (var permissionId in allPermissionIds)
         {
-            return;
-        }
+            if (grantedPermissionIds.Contains(permissionId))
+            {
+                continue;
+            }
 
-        foreach (var permissionId in missingPermissionIds)
-        {
             adminRole.RolePermissions.Add(new RolePermission
             {
                 RoleId = adminRole.Id,
@@ -259,26 +262,48 @@ public static class DbSeeder
         }
     }
 
-    private static async Task SeedUsersAsync(
+    private static string ResolveAdminEmail(IConfiguration configuration)
+    {
+        var adminEmail = configuration[$"{SeedOptions.SectionName}:AdminEmail"];
+        if (string.IsNullOrWhiteSpace(adminEmail))
+        {
+            adminEmail = DefaultAdminEmail;
+        }
+
+        return adminEmail.Trim().ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Development açılışında yalnızca kanonik admin kalır: diğer tüm kullanıcılar,
+    /// makaleler, değerlendirmeler ve bildirimler fiziksel olarak silinir.
+    /// </summary>
+    private static async Task ResetToSingleAdminAsync(
         BlogDbContext context,
         IConfiguration configuration,
         CancellationToken cancellationToken)
     {
-        // Silinmiş kullanıcılar da sayılmalı: e-posta index'i onları da kapsıyor,
-        // aksi halde tekrar eklemeye çalışıp unique ihlaline düşerdik.
-        if (await context.Users.IgnoreQueryFilters().AnyAsync(cancellationToken))
-        {
-            return;
-        }
+        var keepEmail = ResolveAdminEmail(configuration);
 
-        var adminEmail = configuration[$"{SeedOptions.SectionName}:AdminEmail"];
+        await context.Reviews.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+        await context.Notifications.ExecuteDeleteAsync(cancellationToken);
+        await context.Manuscripts.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+
+        await context.Users
+            .IgnoreQueryFilters()
+            .Where(u => u.Email != keepEmail)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Tek yönetici hesabını oluşturur veya profilini günceller.
+    /// </summary>
+    private static async Task EnsureAdminUserAsync(
+        BlogDbContext context,
+        IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        var adminEmail = ResolveAdminEmail(configuration);
         var adminPassword = configuration[$"{SeedOptions.SectionName}:AdminPassword"];
-        var demoPassword = configuration[$"{SeedOptions.SectionName}:DemoPassword"];
-
-        if (string.IsNullOrWhiteSpace(adminEmail))
-        {
-            adminEmail = "admin@yayin.local";
-        }
 
         if (string.IsNullOrWhiteSpace(adminPassword))
         {
@@ -286,102 +311,68 @@ public static class DbSeeder
                 "Seed:AdminPassword eksik. Development: Blog.API → Manage User Secrets (Seed:AdminPassword). Production: Seed__AdminPassword ortam değişkeni.");
         }
 
-        if (string.IsNullOrWhiteSpace(demoPassword))
+        var adminRoleId = await context.Roles
+            .IgnoreQueryFilters()
+            .Where(r => r.Name == AdminRoleName)
+            .Select(r => r.Id)
+            .FirstAsync(cancellationToken);
+
+        var institutionId = await context.Institutions
+            .IgnoreQueryFilters()
+            .Where(i => i.Name == AdminInstitutionName)
+            .Select(i => (int?)i.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (institutionId is null)
         {
-            demoPassword = adminPassword;
+            throw new InvalidOperationException(
+                $"Seed kurumu bulunamadı: {AdminInstitutionName}");
         }
 
-        var roleIdsByName = await context.Roles
-            .IgnoreQueryFilters()
-            .ToDictionaryAsync(r => r.Name, r => r.Id, cancellationToken);
-
-        var institutionIdsByName = await context.Institutions
-            .IgnoreQueryFilters()
-            .ToDictionaryAsync(i => i.Name, i => i.Id, cancellationToken);
-
         var hasher = new PasswordHasher<User>();
-        var createdAtUtc = DateTime.UtcNow;
+        var user = await context.Users
+            .IgnoreQueryFilters()
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.Email == adminEmail, cancellationToken);
 
-        var seedUsers = new[]
+        if (user is null)
         {
-            (
-                Email: adminEmail,
-                Password: adminPassword,
-                FirstName: "Sistem",
-                LastName: "Yöneticisi",
-                Title: AcademicTitle.Dr,
-                InstitutionName: (string?)null,
-                Orcid: (string?)null,
-                RoleNames: new[] { AdminRoleName }
-            ),
-            (
-                Email: "editor@yayin.local",
-                Password: demoPassword,
-                FirstName: "Selin",
-                LastName: "Aydın",
-                Title: AcademicTitle.ProfDr,
-                InstitutionName: (string?)"İstanbul Teknik Üniversitesi",
-                Orcid: (string?)"0000-0001-2345-6789",
-                RoleNames: new[] { EditorRoleName }
-            ),
-            (
-                // Aynı kişinin hem hakem hem yazar olması gerçek hayatta olağan;
-                // çoklu rol yapısını gösteren örnek bu.
-                Email: "reviewer@yayin.local",
-                Password: demoPassword,
-                FirstName: "Mert",
-                LastName: "Kaya",
-                Title: AcademicTitle.DocDr,
-                InstitutionName: (string?)"Ege Üniversitesi",
-                Orcid: (string?)"0000-0002-3456-7890",
-                RoleNames: new[] { ReviewerRoleName, AuthorRoleName }
-            ),
-            (
-                Email: "author@yayin.local",
-                Password: demoPassword,
-                FirstName: "Elif",
-                LastName: "Demir",
-                Title: AcademicTitle.DrOgrUyesi,
-                InstitutionName: (string?)"Orta Doğu Teknik Üniversitesi",
-                Orcid: (string?)"0000-0003-4567-8901",
-                RoleNames: new[] { AuthorRoleName }
-            )
-        };
-
-        foreach (var seedUser in seedUsers)
-        {
-            var user = new User
+            user = new User
             {
-                // Login gelen adresi küçük harfe çevirdiği için burada da normalize ediyoruz.
-                Email = seedUser.Email.Trim().ToLowerInvariant(),
-                AcademicTitle = seedUser.Title,
-                InstitutionId = seedUser.InstitutionName is string institutionName
-                    ? institutionIdsByName[institutionName]
-                    : null,
-                Orcid = seedUser.Orcid,
+                Email = adminEmail,
+                AcademicTitle = AcademicTitle.DocDr,
+                InstitutionId = institutionId,
+                Orcid = "4382-9384-2256-2216",
                 IsActive = true,
-                CreatedAtUtc = createdAtUtc
+                SecurityVersion = 1,
+                CreatedAtUtc = DateTime.UtcNow
             };
 
-            user.SetName(seedUser.FirstName, seedUser.LastName);
-
-            user.PasswordHash = hasher.HashPassword(user, seedUser.Password);
-
-            foreach (var roleName in seedUser.RoleNames)
-            {
-                user.UserRoles.Add(new UserRole { RoleId = roleIdsByName[roleName] });
-            }
-
+            user.SetName("Furkan Can", "BAYRAK");
+            user.PasswordHash = hasher.HashPassword(user, adminPassword);
+            user.UserRoles.Add(new UserRole { RoleId = adminRoleId });
             context.Users.Add(user);
+        }
+        else
+        {
+            user.DeletedAtUtc = null;
+            user.SetName("Furkan Can", "BAYRAK");
+            user.AcademicTitle = AcademicTitle.DocDr;
+            user.InstitutionId = institutionId;
+            user.Orcid = "4382-9384-2256-2216";
+            user.IsActive = true;
+
+            if (!user.UserRoles.Any(ur => ur.RoleId == adminRoleId))
+            {
+                user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = adminRoleId });
+            }
         }
 
         await context.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
-    /// Kullanıcılar bir kez oluşturulunca seed tekrar çalışmaz; User Secrets'taki
-    /// DemoPassword değişse bile hash eski kalır. Development'ta DemoPassword verildiyse
-    /// dört hesap da o şifreye çekilir (yerel girişin "hatalı" kalmaması için).
+    /// Development'ta DemoPassword verildiyse yönetici hesabının şifresini buna eşitler.
     /// </summary>
     private static async Task SyncDevelopmentPasswordsAsync(
         BlogDbContext context,
@@ -394,38 +385,20 @@ public static class DbSeeder
             return;
         }
 
-        var adminEmail = configuration[$"{SeedOptions.SectionName}:AdminEmail"];
-        if (string.IsNullOrWhiteSpace(adminEmail))
-        {
-            adminEmail = "admin@yayin.local";
-        }
+        var adminEmail = ResolveAdminEmail(configuration);
 
-        adminEmail = adminEmail.Trim().ToLowerInvariant();
-
-        var emails = new[]
-        {
-            adminEmail,
-            "editor@yayin.local",
-            "reviewer@yayin.local",
-            "author@yayin.local"
-        };
-
-        var users = await context.Users
+        var user = await context.Users
             .IgnoreQueryFilters()
-            .Where(u => emails.Contains(u.Email))
-            .ToListAsync(cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email == adminEmail, cancellationToken);
 
-        if (users.Count == 0)
+        if (user is null)
         {
             return;
         }
 
         var hasher = new PasswordHasher<User>();
-        foreach (var user in users)
-        {
-            user.PasswordHash = hasher.HashPassword(user, demoPassword);
-            user.SecurityVersion += 1;
-        }
+        user.PasswordHash = hasher.HashPassword(user, demoPassword);
+        user.SecurityVersion += 1;
 
         await context.SaveChangesAsync(cancellationToken);
     }

@@ -3,7 +3,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -18,7 +17,6 @@ export class LoginPage {
 
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
-  readonly showDemoAccounts = !environment.production;
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],

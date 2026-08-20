@@ -4,15 +4,15 @@ public sealed class SeedOptions
 {
     public const string SectionName = "Seed";
 
-    /// <summary>Yönetici hesabının e-postası. Verilmezse varsayılan kullanılır.</summary>
-    public string AdminEmail { get; set; } = "admin@yayin.local";
+    /// <summary>Yönetici hesabının e-postası. Verilmezse fcbayrak@firat.edu.tr.</summary>
+    public string AdminEmail { get; set; } = "fcbayrak@firat.edu.tr";
 
     /// <summary>Zorunlu. User Secrets veya Seed__AdminPassword ortam değişkeni.</summary>
     public string AdminPassword { get; set; } = string.Empty;
 
     /// <summary>
-    /// Development demo hesaplarının şifresi. Verilmezse ilk oluşturmada AdminPassword kullanılır.
-    /// Verildiyse her açılışta yönetici dahil dört seed hesabı bu şifreye eşitlenir.
+    /// Development'ta verildiyse her açılışta yönetici şifresi buna eşitlenir.
+    /// Verilmezse yalnızca ilk oluşturmada AdminPassword kullanılır.
     /// </summary>
     public string DemoPassword { get; set; } = string.Empty;
 }
