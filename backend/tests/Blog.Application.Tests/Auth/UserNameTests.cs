@@ -6,16 +6,16 @@ namespace Blog.Application.Tests.Auth;
 public class UserNameTests
 {
     [Fact]
-    public void SetName_stores_trimmed_parts()
+    public void SetName_stores_trimmed_parts_and_uppercases_last_name()
     {
         var user = new User();
 
         user.SetName("  Elif ", " Demir ");
 
         Assert.Equal("Elif", user.FirstName);
-        Assert.Equal("Demir", user.LastName);
-        Assert.Equal("Elif Demir", user.DisplayName);
-        Assert.Equal("Dr. Elif Demir", user.DisplayNameWithTitle);
+        Assert.Equal("DEMİR", user.LastName);
+        Assert.Equal("Elif DEMİR", user.DisplayName);
+        Assert.Equal("Dr. Elif DEMİR", user.DisplayNameWithTitle);
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public class UserNameTests
 
         user.SetName("Elif", "Demir");
 
-        Assert.Equal("Dr. Öğr. Üyesi Elif Demir", user.DisplayNameWithTitle);
+        Assert.Equal("Dr. Öğr. Üyesi Elif DEMİR", user.DisplayNameWithTitle);
     }
 
     [Fact]
@@ -35,6 +35,16 @@ public class UserNameTests
 
         Assert.Throws<ArgumentException>(() => user.SetName(" ", "Demir"));
         Assert.Throws<ArgumentException>(() => user.SetName("Elif", "\t"));
+    }
+
+    [Fact]
+    public void SetName_uppercases_turkish_dotless_i()
+    {
+        var user = new User();
+
+        user.SetName("Ayşe", "Yılmaz");
+
+        Assert.Equal("YILMAZ", user.LastName);
     }
 }
 
@@ -58,4 +68,3 @@ public class AcademicTitleTests
         Assert.Equal("Dr. Elif Demir", AcademicTitles.FormatName((AcademicTitle)0, "Elif", "Demir"));
     }
 }
-

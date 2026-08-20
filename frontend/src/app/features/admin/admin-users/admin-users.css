@@ -173,6 +173,11 @@ th {
   font-weight: 600;
 }
 
+.surname,
+.surname-input {
+  text-transform: uppercase;
+}
+
 td .title-select {
   font: inherit;
   font-size: 0.9rem;

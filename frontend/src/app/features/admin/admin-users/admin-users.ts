@@ -240,6 +240,11 @@ export class AdminUsers implements OnInit {
     this.invalidFields.set(next);
   }
 
+  onLastNameChange(value: string): void {
+    this.lastName = value.toLocaleUpperCase('tr-TR');
+    this.clearFieldError('lastName');
+  }
+
   reload(): void {
     this.loadUsers();
   }

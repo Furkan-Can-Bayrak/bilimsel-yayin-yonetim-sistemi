@@ -50,7 +50,7 @@
         <tbody>
           @for (user of users(); track user.id) {
             <tr>
-              <td>{{ user.firstName }} {{ user.lastName }}</td>
+              <td>{{ user.firstName }} <span class="surname">{{ user.lastName }}</span></td>
               <td>{{ user.email }}</td>
               <td>
                 @if (canManage) {
@@ -207,11 +207,12 @@
             <input
               type="text"
               name="lastName"
+              class="surname-input"
               [(ngModel)]="lastName"
               maxlength="80"
               [class.invalid]="isInvalid('lastName')"
               [disabled]="submitting()"
-              (ngModelChange)="clearFieldError('lastName')"
+              (ngModelChange)="onLastNameChange($event)"
               required
             />
           </label>

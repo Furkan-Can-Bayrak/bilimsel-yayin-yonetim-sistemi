@@ -1,3 +1,4 @@
+using System.Globalization;
 using Blog.Domain.Common;
 using Blog.Domain.Enums;
 
@@ -63,6 +64,7 @@ public sealed class User : ISoftDeletable
         }
 
         FirstName = firstName.Trim();
-        LastName = lastName.Trim();
+        // Akademik yazım: soyad Türkçe büyük harf (i→İ, ı→I).
+        LastName = lastName.Trim().ToUpper(new CultureInfo("tr-TR"));
     }
 }
