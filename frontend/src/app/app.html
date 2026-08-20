@@ -31,6 +31,9 @@
         @if (auth.hasPermission(Permissions.ResearchAreas.Manage)) {
           <a routerLink="/admin/research-areas" routerLinkActive="active">Araştırma alanları</a>
         }
+        @if (auth.hasPermission(Permissions.Users.Manage)) {
+          <a routerLink="/admin/users" routerLinkActive="active">Kullanıcılar</a>
+        }
         @if (auth.hasPermission(Permissions.Notifications.View)) {
           <a routerLink="/admin/notifications" routerLinkActive="active">Bildirimler</a>
         }

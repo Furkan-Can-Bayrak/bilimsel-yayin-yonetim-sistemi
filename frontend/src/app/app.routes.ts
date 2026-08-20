@@ -8,6 +8,7 @@ import { AdminNotifications } from './features/admin/admin-notifications/admin-n
 import { AdminReviewQueue } from './features/admin/admin-review-queue/admin-review-queue';
 import { AdminReviewForm } from './features/admin/admin-review-form/admin-review-form';
 import { AdminResearchAreas } from './features/admin/admin-research-areas/admin-research-areas';
+import { AdminUsers } from './features/admin/admin-users/admin-users';
 import { authGuard, permissionGuard, permissionGuardAny } from './core/guards/auth.guard';
 import { Permissions } from './core/auth/permissions';
 
@@ -48,6 +49,11 @@ export const routes: Routes = [
         path: 'research-areas',
         component: AdminResearchAreas,
         canActivate: [permissionGuard(Permissions.ResearchAreas.Manage)],
+      },
+      {
+        path: 'users',
+        component: AdminUsers,
+        canActivate: [permissionGuard(Permissions.Users.Manage)],
       },
       {
         path: 'notifications',

@@ -1,0 +1,164 @@
+<section class="page admin-page">
+  <header class="admin-head">
+    <div>
+      <h1>Kullanıcılar</h1>
+      <p class="lead">Sisteme giriş yapabilecek hesapları yönetin. Yeni kullanıcı yalnızca yetkili kişiler ekleyebilir.</p>
+    </div>
+    <div class="head-actions">
+      @if (canManage) {
+        <button type="button" class="btn primary" (click)="openCreate()">Kullanıcı ekle</button>
+      }
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (users().length === 0) {
+    <p class="muted">Henüz kullanıcı yok.</p>
+  } @else {
+    <p class="result-meta">{{ users().length }} kullanıcı</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ad</th>
+            <th>E-posta</th>
+            <th>Unvan</th>
+            <th>Roller</th>
+            <th>Durum</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>{{ user.firstName }} {{ user.lastName }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ titleLabel(user.academicTitle) }}</td>
+              <td>{{ user.roleNames.join(', ') }}</td>
+              <td>{{ user.isActive ? 'Aktif' : 'Pasif' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (modalOpen()) {
+  <div class="modal-backdrop" (click)="closeCreate()">
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-user-title"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="create-user-title">Kullanıcı ekle</h2>
+      <p class="modal-lead">E-posta ve şifre ile yeni hesap oluşturun; en az bir rol seçin.</p>
+
+      @if (modalError()) {
+        <p class="error">{{ modalError() }}</p>
+      }
+
+      <form (ngSubmit)="create()">
+        <div class="grid">
+          <label class="field">
+            <span>E-posta</span>
+            <input
+              type="email"
+              name="email"
+              [(ngModel)]="email"
+              maxlength="200"
+              autocomplete="off"
+              [disabled]="submitting()"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Şifre</span>
+            <input
+              type="password"
+              name="password"
+              [(ngModel)]="password"
+              minlength="6"
+              autocomplete="new-password"
+              [disabled]="submitting()"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Ad</span>
+            <input
+              type="text"
+              name="firstName"
+              [(ngModel)]="firstName"
+              maxlength="80"
+              [disabled]="submitting()"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Soyad</span>
+            <input
+              type="text"
+              name="lastName"
+              [(ngModel)]="lastName"
+              maxlength="80"
+              [disabled]="submitting()"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Unvan</span>
+            <select name="academicTitle" [(ngModel)]="academicTitle" [disabled]="submitting()">
+              @for (opt of titleOptions; track opt.value) {
+                <option [ngValue]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            <span>ORCID (opsiyonel)</span>
+            <input
+              type="text"
+              name="orcid"
+              [(ngModel)]="orcid"
+              maxlength="19"
+              placeholder="0000-0002-1825-0097"
+              [disabled]="submitting()"
+            />
+          </label>
+        </div>
+
+        <fieldset class="roles">
+          <legend>Roller</legend>
+          <div class="role-list">
+            @for (role of roles(); track role.id) {
+              <label class="role-item">
+                <input
+                  type="checkbox"
+                  [checked]="isRoleSelected(role.id)"
+                  [disabled]="submitting()"
+                  (change)="toggleRole(role.id, $any($event.target).checked)"
+                />
+                <span>{{ role.name }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="closeCreate()">
+            İptal
+          </button>
+          <button type="submit" class="btn primary" [disabled]="submitting()">
+            Kaydet
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
