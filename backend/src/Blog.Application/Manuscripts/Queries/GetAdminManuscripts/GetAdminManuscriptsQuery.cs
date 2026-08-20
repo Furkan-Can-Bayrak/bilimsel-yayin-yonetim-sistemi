@@ -61,7 +61,14 @@ public sealed class GetAdminManuscriptsQueryHandler
         var includeReview = _currentUser.HasPermission(Permissions.Reviews.ViewAll);
 
         var rows = await query
-            .OrderByDescending(m => m.Id)
+            .OrderBy(m =>
+                m.Status == ManuscriptStatus.Submitted ? 0 :
+                m.Status == ManuscriptStatus.UnderReview ? 1 :
+                m.Status == ManuscriptStatus.Published ? 2 :
+                m.Status == ManuscriptStatus.Accepted ? 3 :
+                m.Status == ManuscriptStatus.Rejected ? 4 :
+                5)
+            .ThenByDescending(m => m.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(m => new
