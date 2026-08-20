@@ -158,14 +158,68 @@ tr:last-child td {
   color: #4b3480;
 }
 
-.review-meta {
+.badge-Rejected {
+  background: #f0d9d9;
+  color: #8a1f1f;
+}
+
+.badge-Draft {
+  background: #e8e4dc;
+  color: #5c5346;
+}
+
+.status-cell {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+}
+
+.review-block {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem 0.35rem;
-  margin-top: 0.35rem;
-  font-size: 0.8rem;
+  gap: 0.35rem 0.45rem;
+}
+
+.review-reviewer {
+  width: 100%;
+  font-size: 0.78rem;
   color: var(--muted);
+}
+
+.reco-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.22rem 0.5rem;
+  border-radius: 4px;
+  line-height: 1.25;
+}
+
+.reco-pending {
+  background: #efe4c8;
+  color: #6b4f12;
+}
+
+.reco-none {
+  background: #eceae4;
+  color: #6a6358;
+}
+
+.reco-accept {
+  background: #d7ebe3;
+  color: #0f6e56;
+}
+
+.reco-reject {
+  background: #f0d9d9;
+  color: #8a1f1f;
+}
+
+.reco-done {
+  background: #e4dcf3;
+  color: #4b3480;
 }
 
 .btn.tiny {
@@ -242,9 +296,13 @@ tr:last-child td {
 }
 
 .report-meta {
-  margin: -0.5rem 0 0.75rem;
+  margin: -0.5rem 0 0.55rem;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.modal-report .reco-badge {
+  margin: 0 0 0.75rem;
 }
 
 .report-body {

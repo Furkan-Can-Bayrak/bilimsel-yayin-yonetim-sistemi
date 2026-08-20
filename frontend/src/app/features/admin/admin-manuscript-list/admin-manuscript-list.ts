@@ -11,7 +11,7 @@ import {
   ResearchArea,
   ReviewSummary,
 } from '../../../core/models/manuscript.model';
-import { REVIEW_RECOMMENDATION_LABELS, ReviewerCandidate } from '../../../core/models/review.model';
+import { ReviewerCandidate } from '../../../core/models/review.model';
 import { Permissions } from '../../../core/auth/permissions';
 import { AuthService } from '../../../core/services/auth.service';
 import { ManuscriptService } from '../../../core/services/manuscript.service';
@@ -32,7 +32,6 @@ export class AdminManuscriptList implements OnInit {
 
   readonly statusLabels = MANUSCRIPT_STATUS_LABELS;
   readonly statusOptions = MANUSCRIPT_STATUSES;
-  readonly recommendationLabels = REVIEW_RECOMMENDATION_LABELS;
 
   readonly canCreate = this.auth.hasPermission(Permissions.Manuscripts.Create);
   readonly canUpdate = this.auth.hasPermission(Permissions.Manuscripts.Update);

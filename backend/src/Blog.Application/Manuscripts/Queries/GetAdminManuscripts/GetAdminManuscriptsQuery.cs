@@ -60,14 +60,18 @@ public sealed class GetAdminManuscriptsQueryHandler
         var totalCount = await query.CountAsync(cancellationToken);
         var includeReview = _currentUser.HasPermission(Permissions.Reviews.ViewAll);
 
+        // Öncelik: hakem raporu geldi → incelemede (bekleniyor) → gönderildi → yayın/kabul/ret/taslak
         var rows = await query
             .OrderBy(m =>
-                m.Status == ManuscriptStatus.Submitted ? 0 :
+                m.Status == ManuscriptStatus.UnderReview
+                    && m.Reviews.Any(r => r.SubmittedAtUtc != null)
+                    ? 0 :
                 m.Status == ManuscriptStatus.UnderReview ? 1 :
-                m.Status == ManuscriptStatus.Published ? 2 :
-                m.Status == ManuscriptStatus.Accepted ? 3 :
-                m.Status == ManuscriptStatus.Rejected ? 4 :
-                5)
+                m.Status == ManuscriptStatus.Submitted ? 2 :
+                m.Status == ManuscriptStatus.Published ? 3 :
+                m.Status == ManuscriptStatus.Accepted ? 4 :
+                m.Status == ManuscriptStatus.Rejected ? 5 :
+                6)
             .ThenByDescending(m => m.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

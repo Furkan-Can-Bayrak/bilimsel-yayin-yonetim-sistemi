@@ -84,35 +84,51 @@
               <td>{{ manuscript.authorName || '—' }}</td>
               <td>{{ manuscript.researchAreaName }}</td>
               <td>
-                <span class="badge" [class]="'badge badge-' + manuscript.status">
-                  {{ statusLabels[manuscript.status] }}
-                </span>
-                @if (canViewReviews && manuscript.currentReview) {
-                  <div class="review-meta">
-                    <span>{{ manuscript.currentReview.reviewerName }}</span>
-                    @if (manuscript.currentReview.submittedAtUtc) {
-                      <span>
-                        ·
-                        {{
-                          manuscript.currentReview.recommendation
-                            ? recommendationLabels[manuscript.currentReview.recommendation]
-                            : 'Rapor var'
-                        }}
-                      </span>
-                      @if (manuscript.currentReview.comments) {
-                        <button
-                          type="button"
-                          class="btn ghost tiny"
-                          (click)="openReport(manuscript)"
-                        >
-                          Rapor
-                        </button>
-                      }
-                    } @else {
-                      <span>· bekleniyor</span>
+                <div class="status-cell">
+                  <span class="badge" [class]="'badge badge-' + manuscript.status">
+                    {{ statusLabels[manuscript.status] }}
+                  </span>
+
+                  @if (canViewReviews) {
+                    @if (manuscript.currentReview; as review) {
+                      <div class="review-block">
+                        <span class="review-reviewer">Hakem: {{ review.reviewerName }}</span>
+
+                        @if (review.submittedAtUtc) {
+                          <span
+                            class="reco-badge"
+                            [class.reco-accept]="review.recommendation === 'Accept'"
+                            [class.reco-reject]="review.recommendation === 'Reject'"
+                            [class.reco-done]="!review.recommendation"
+                          >
+                            @if (review.recommendation === 'Accept') {
+                              Hakem: Kabul önerisi
+                            } @else if (review.recommendation === 'Reject') {
+                              Hakem: Ret önerisi
+                            } @else {
+                              Rapor teslim edildi
+                            }
+                          </span>
+                          <button
+                            type="button"
+                            class="btn ghost tiny"
+                            (click)="openReport(manuscript)"
+                          >
+                            Rapora bak
+                          </button>
+                        } @else {
+                          <span class="reco-badge reco-pending">Rapor bekleniyor</span>
+                        }
+                      </div>
+                    } @else if (
+                      manuscript.status === 'Submitted' || manuscript.status === 'UnderReview'
+                    ) {
+                      <div class="review-block">
+                        <span class="reco-badge reco-none">Hakem atanmadı</span>
+                      </div>
                     }
-                  </div>
-                }
+                  }
+                </div>
               </td>
               <td>
                 @if (manuscript.publishedAt) {
@@ -289,13 +305,13 @@
     >
       <h2 id="report-title">Hakem raporu</h2>
       <p class="modal-lead">{{ report.title }}</p>
-      <p class="report-meta">
-        {{ report.review.reviewerName }}
-        @if (report.review.recommendation) {
-          · {{ recommendationLabels[report.review.recommendation] }}
-        }
-      </p>
-      <div class="report-body">{{ report.review.comments }}</div>
+      <p class="report-meta">{{ report.review.reviewerName }}</p>
+      @if (report.review.recommendation === 'Accept') {
+        <span class="reco-badge reco-accept">Hakem: Kabul önerisi</span>
+      } @else if (report.review.recommendation === 'Reject') {
+        <span class="reco-badge reco-reject">Hakem: Ret önerisi</span>
+      }
+      <div class="report-body">{{ report.review.comments || 'Gerekçe yazılmamış.' }}</div>
       <div class="modal-actions">
         <button type="button" class="btn ghost" (click)="closeReport()">Kapat</button>
       </div>
