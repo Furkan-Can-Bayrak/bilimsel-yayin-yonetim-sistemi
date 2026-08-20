@@ -38,6 +38,14 @@ public sealed class SubmitManuscriptCommandHandler : IRequestHandler<SubmitManus
             throw new ForbiddenException("Yalnızca kendi makalenizi gönderebilirsiniz.");
         }
 
+        if (string.IsNullOrWhiteSpace(manuscript.Title) ||
+            string.IsNullOrWhiteSpace(manuscript.Content) ||
+            manuscript.ResearchAreaId is null or <= 0)
+        {
+            throw new ConflictException(
+                "Değerlendirmeye göndermek için başlık, içerik ve araştırma alanı zorunludur.");
+        }
+
         ManuscriptAccess.ApplyTransition(manuscript.Submit);
         await _db.SaveChangesAsync(cancellationToken);
 

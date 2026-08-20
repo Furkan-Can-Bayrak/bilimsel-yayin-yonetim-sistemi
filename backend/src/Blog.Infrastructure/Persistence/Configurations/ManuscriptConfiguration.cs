@@ -40,6 +40,7 @@ public class ManuscriptConfiguration : IEntityTypeConfiguration<Manuscript>
         builder.HasOne(m => m.ResearchArea)
             .WithMany(a => a.Manuscripts)
             .HasForeignKey(m => m.ResearchAreaId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(m => m.Author)

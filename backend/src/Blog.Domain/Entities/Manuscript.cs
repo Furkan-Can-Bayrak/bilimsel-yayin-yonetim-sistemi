@@ -13,7 +13,8 @@ public sealed class Manuscript : ISoftDeletable
     public string? Summary { get; set; }
     public DateTime? PublishedAt { get; private set; }
     public ManuscriptStatus Status { get; private set; } = ManuscriptStatus.Draft;
-    public int ResearchAreaId { get; set; }
+    /// <summary>Taslakta boş kalabilir; değerlendirmeye göndermeden önce zorunlu.</summary>
+    public int? ResearchAreaId { get; set; }
     public ResearchArea? ResearchArea { get; set; }
 
     /// <summary>Makaleyi oluşturan kullanıcı. İçerik düzenleme bu kişiye (veya ViewAll sahibine) aittir.</summary>

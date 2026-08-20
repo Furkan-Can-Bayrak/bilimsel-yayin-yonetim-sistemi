@@ -13,7 +13,7 @@ public sealed record UpdateManuscriptCommand(
     string Title,
     string Content,
     string? Summary,
-    int ResearchAreaId,
+    int? ResearchAreaId,
     bool SubmitForReview = false) : IRequest;
 
 public sealed class UpdateManuscriptCommandValidator : AbstractValidator<UpdateManuscriptCommand>
@@ -21,11 +21,35 @@ public sealed class UpdateManuscriptCommandValidator : AbstractValidator<UpdateM
     public UpdateManuscriptCommandValidator()
     {
         RuleFor(x => x.Id).GreaterThan(0);
-        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.Content).NotEmpty();
+        RuleFor(x => x.Title).MaximumLength(200);
         RuleFor(x => x.Summary).MaximumLength(500).When(x => x.Summary is not null);
-        RuleFor(x => x.ResearchAreaId).GreaterThan(0);
+
+        RuleFor(x => x)
+            .Must(HasAnyContent)
+            .WithMessage("Taslak için en az bir alan doldurulmalıdır.")
+            .WithName("Manuscript");
+
+        When(x => x.SubmitForReview, () =>
+        {
+            RuleFor(x => x.Title).NotEmpty().WithMessage("Başlık zorunludur.");
+            RuleFor(x => x.Content).NotEmpty().WithMessage("İçerik zorunludur.");
+            RuleFor(x => x.ResearchAreaId)
+                .NotNull()
+                .GreaterThan(0)
+                .WithMessage("Araştırma alanı zorunludur.");
+        });
+
+        When(x => x.ResearchAreaId is not null, () =>
+        {
+            RuleFor(x => x.ResearchAreaId!.Value).GreaterThan(0);
+        });
     }
+
+    private static bool HasAnyContent(UpdateManuscriptCommand x) =>
+        !string.IsNullOrWhiteSpace(x.Title) ||
+        !string.IsNullOrWhiteSpace(x.Content) ||
+        !string.IsNullOrWhiteSpace(x.Summary) ||
+        x.ResearchAreaId is > 0;
 }
 
 public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManuscriptCommand>
@@ -64,24 +88,32 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
             throw new ConflictException("Bu durumdayken makale düzenlenemez.");
         }
 
-        var areaExists = await _db.ResearchAreas
-            .AnyAsync(a => a.Id == request.ResearchAreaId, cancellationToken);
+        var researchAreaId = request.ResearchAreaId is > 0 ? request.ResearchAreaId : null;
 
-        if (!areaExists)
+        if (researchAreaId is int areaId)
         {
-            throw new NotFoundException($"Araştırma alanı bulunamadı: {request.ResearchAreaId}");
+            var areaExists = await _db.ResearchAreas
+                .AnyAsync(a => a.Id == areaId, cancellationToken);
+
+            if (!areaExists)
+            {
+                throw new NotFoundException($"Araştırma alanı bulunamadı: {areaId}");
+            }
         }
 
+        var title = (request.Title ?? string.Empty).Trim();
+        var slugSource = string.IsNullOrWhiteSpace(title) ? "taslak" : title;
+
         var slug = await SlugHelper.GenerateUniqueSlugAsync(
-            request.Title,
+            slugSource,
             nameof(request.Title),
             s => _db.Manuscripts.AnyAsync(m => m.Slug == s && m.Id != request.Id, cancellationToken),
             cancellationToken);
 
-        manuscript.Title = request.Title.Trim();
-        manuscript.Content = request.Content;
-        manuscript.Summary = request.Summary;
-        manuscript.ResearchAreaId = request.ResearchAreaId;
+        manuscript.Title = title;
+        manuscript.Content = request.Content ?? string.Empty;
+        manuscript.Summary = string.IsNullOrWhiteSpace(request.Summary) ? null : request.Summary.Trim();
+        manuscript.ResearchAreaId = researchAreaId;
         manuscript.Slug = slug;
 
         if (request.SubmitForReview)

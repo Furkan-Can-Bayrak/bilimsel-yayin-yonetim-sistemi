@@ -77,7 +77,7 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ResearchAreaId")
+                    b.Property<int?>("ResearchAreaId")
                         .HasColumnType("int");
 
                     b.Property<string>("Slug")
@@ -380,8 +380,7 @@ namespace Blog.Infrastructure.Persistence.Migrations
                     b.HasOne("Blog.Domain.Entities.ResearchArea", "ResearchArea")
                         .WithMany("Manuscripts")
                         .HasForeignKey("ResearchAreaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Author");
 

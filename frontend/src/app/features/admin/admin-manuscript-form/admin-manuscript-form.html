@@ -33,24 +33,43 @@
   } @else {
     <form class="form" [formGroup]="form" (ngSubmit)="submit()">
       <label>
-        Başlık
-        <input type="text" formControlName="title" />
+        <span>Başlık <abbr class="req" title="Zorunlu">*</abbr></span>
+        <input
+          type="text"
+          formControlName="title"
+          [class.invalid]="isInvalid('title')"
+          (input)="clearFieldError('title')"
+        />
       </label>
 
       <label>
-        Özet
-        <textarea formControlName="summary" rows="2"></textarea>
+        <span>Özet</span>
+        <textarea
+          formControlName="summary"
+          rows="2"
+          [class.invalid]="isInvalid('summary')"
+          (input)="clearFieldError('summary')"
+        ></textarea>
       </label>
 
       <label>
-        İçerik
-        <textarea formControlName="content" rows="10"></textarea>
+        <span>İçerik <abbr class="req" title="Zorunlu">*</abbr></span>
+        <textarea
+          formControlName="content"
+          rows="10"
+          [class.invalid]="isInvalid('content')"
+          (input)="clearFieldError('content')"
+        ></textarea>
       </label>
 
       <label>
-        Araştırma alanı
-        <select formControlName="researchAreaId">
-          <option [ngValue]="0" disabled>Seç…</option>
+        <span>Araştırma alanı <abbr class="req" title="Zorunlu">*</abbr></span>
+        <select
+          formControlName="researchAreaId"
+          [class.invalid]="isInvalid('researchAreaId')"
+          (change)="clearFieldError('researchAreaId')"
+        >
+          <option [ngValue]="null">Seçiniz</option>
           @for (area of researchAreas(); track area.id) {
             <option [ngValue]="area.id">{{ area.name }}</option>
           }

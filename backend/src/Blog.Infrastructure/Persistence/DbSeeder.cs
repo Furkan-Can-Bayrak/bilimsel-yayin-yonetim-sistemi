@@ -28,7 +28,6 @@ public static class DbSeeder
         await SeedRolesAsync(context, cancellationToken);
         await SyncSystemRolePermissionsAsync(context, cancellationToken);
         await SeedInstitutionsAsync(context, cancellationToken);
-        await ResetToSingleAdminAsync(context, configuration, cancellationToken);
         await EnsureAdminUserAsync(context, configuration, cancellationToken);
         await SyncDevelopmentPasswordsAsync(context, configuration, cancellationToken);
     }
@@ -271,27 +270,6 @@ public static class DbSeeder
         }
 
         return adminEmail.Trim().ToLowerInvariant();
-    }
-
-    /// <summary>
-    /// Development açılışında yalnızca kanonik admin kalır: diğer tüm kullanıcılar,
-    /// makaleler, değerlendirmeler ve bildirimler fiziksel olarak silinir.
-    /// </summary>
-    private static async Task ResetToSingleAdminAsync(
-        BlogDbContext context,
-        IConfiguration configuration,
-        CancellationToken cancellationToken)
-    {
-        var keepEmail = ResolveAdminEmail(configuration);
-
-        await context.Reviews.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
-        await context.Notifications.ExecuteDeleteAsync(cancellationToken);
-        await context.Manuscripts.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
-
-        await context.Users
-            .IgnoreQueryFilters()
-            .Where(u => u.Email != keepEmail)
-            .ExecuteDeleteAsync(cancellationToken);
     }
 
     /// <summary>

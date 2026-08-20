@@ -133,5 +133,5 @@ public sealed record UpdateManuscriptRequest(
     string Title,
     string Content,
     string? Summary,
-    int ResearchAreaId,
+    int? ResearchAreaId,
     bool SubmitForReview = false);

@@ -16,22 +16,31 @@ public class CreateManuscriptCommandValidatorTests
     }
 
     [Fact]
-    public void Empty_title_fails()
+    public void Empty_draft_fails()
     {
         var result = _sut.Validate(
-            new CreateManuscriptCommand("", "İçerik", null, 1));
+            new CreateManuscriptCommand("", "", null, null, SubmitForReview: false));
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateManuscriptCommand.Title));
     }
 
     [Fact]
-    public void ResearchAreaId_must_be_greater_than_zero()
+    public void Draft_with_only_summary_passes()
     {
         var result = _sut.Validate(
-            new CreateManuscriptCommand("Başlık", "İçerik", null, 0));
+            new CreateManuscriptCommand("", "", "Kısa özet", null, SubmitForReview: false));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Submit_requires_title_content_and_area()
+    {
+        var result = _sut.Validate(
+            new CreateManuscriptCommand("", "İçerik", null, null, SubmitForReview: true));
 
         Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateManuscriptCommand.Title));
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateManuscriptCommand.ResearchAreaId));
     }
 }

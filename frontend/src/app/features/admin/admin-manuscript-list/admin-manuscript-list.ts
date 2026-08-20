@@ -37,7 +37,6 @@ export class AdminManuscriptList implements OnInit {
   readonly canCreate = this.auth.hasPermission(Permissions.Manuscripts.Create);
   readonly canUpdate = this.auth.hasPermission(Permissions.Manuscripts.Update);
   readonly canDelete = this.auth.hasPermission(Permissions.Manuscripts.Delete);
-  readonly canSubmit = this.auth.hasPermission(Permissions.Manuscripts.Submit);
   readonly canDecide = this.auth.hasPermission(Permissions.Manuscripts.Decide);
   readonly canPublish = this.auth.hasPermission(Permissions.Manuscripts.Publish);
   readonly canUnpublish = this.auth.hasPermission(Permissions.Manuscripts.Unpublish);
@@ -74,10 +73,6 @@ export class AdminManuscriptList implements OnInit {
       next: (data) => this.researchAreas.set(data),
     });
     this.reload();
-  }
-
-  isOwn(manuscript: AdminManuscriptListItem): boolean {
-    return this.auth.userId() === manuscript.authorId;
   }
 
   applyFilters(): void {
@@ -128,10 +123,6 @@ export class AdminManuscriptList implements OnInit {
           this.loading.set(false);
         },
       });
-  }
-
-  submitForReview(manuscript: AdminManuscriptListItem): void {
-    this.run(manuscript.id, this.manuscriptsApi.submit(manuscript.id), 'Gönderilemedi.');
   }
 
   accept(manuscript: AdminManuscriptListItem): void {

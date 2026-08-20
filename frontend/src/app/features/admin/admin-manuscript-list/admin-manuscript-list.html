@@ -123,16 +123,6 @@
               </td>
               <td class="actions">
                 <div class="actions-row">
-                @if (canSubmit && isOwn(manuscript) && (manuscript.status === 'Draft' || manuscript.status === 'Rejected')) {
-                  <button
-                    type="button"
-                    class="btn ghost"
-                    [disabled]="busyId() === manuscript.id"
-                    (click)="submitForReview(manuscript)"
-                  >
-                    Gönder
-                  </button>
-                }
                 @if (canAssign && manuscript.status === 'Submitted') {
                   <button
                     type="button"

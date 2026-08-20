@@ -46,12 +46,14 @@ export class AdminManuscriptForm implements OnInit {
   readonly candidatesLoading = signal(false);
   selectedReviewerId: number | null = null;
 
-  readonly form = this.fb.nonNullable.group({
-    title: ['', [Validators.required, Validators.maxLength(200)]],
-    summary: [''],
-    content: ['', Validators.required],
-    researchAreaId: [0, [Validators.required, Validators.min(1)]],
+  readonly form = this.fb.group({
+    title: ['', [Validators.maxLength(200)]],
+    summary: ['', [Validators.maxLength(500)]],
+    content: [''],
+    researchAreaId: this.fb.control<number | null>(null),
   });
+
+  readonly highlightedFields = signal<ReadonlySet<string>>(new Set());
 
   get isEdit(): boolean {
     return this.editId() !== null;
@@ -121,9 +123,6 @@ export class AdminManuscriptForm implements OnInit {
     this.researchAreasApi.getAll().subscribe({
       next: (areas) => {
         this.researchAreas.set(areas);
-        if (!id && areas.length > 0) {
-          this.form.patchValue({ researchAreaId: areas[0].id });
-        }
 
         if (id && !Number.isNaN(id)) {
           this.editId.set(id);
@@ -139,6 +138,20 @@ export class AdminManuscriptForm implements OnInit {
     });
   }
 
+  isInvalid(controlName: string): boolean {
+    return this.highlightedFields().has(controlName);
+  }
+
+  clearFieldError(controlName: string): void {
+    if (!this.highlightedFields().has(controlName)) {
+      return;
+    }
+
+    const next = new Set(this.highlightedFields());
+    next.delete(controlName);
+    this.highlightedFields.set(next);
+  }
+
   submit(): void {
     this.save(false);
   }
@@ -148,22 +161,58 @@ export class AdminManuscriptForm implements OnInit {
   }
 
   private save(submitForReview: boolean): void {
-    if (!this.canEditContent || this.form.invalid) {
-      this.form.markAllAsTouched();
+    if (!this.canEditContent) {
       return;
     }
 
     const raw = this.form.getRawValue();
+    const title = (raw.title ?? '').trim();
+    const content = (raw.content ?? '').trim();
+    const summary = (raw.summary ?? '').trim();
+    const researchAreaId = raw.researchAreaId;
+
+    if (submitForReview) {
+      const missing = new Set<string>();
+      if (!title) {
+        missing.add('title');
+      }
+      if (!content) {
+        missing.add('content');
+      }
+      if (researchAreaId == null) {
+        missing.add('researchAreaId');
+      }
+
+      if (missing.size > 0) {
+        this.highlightedFields.set(missing);
+        this.error.set('Zorunlu alanları doldurun.');
+        return;
+      }
+    } else {
+      const hasAny =
+        title.length > 0 ||
+        content.length > 0 ||
+        summary.length > 0 ||
+        researchAreaId != null;
+
+      if (!hasAny) {
+        this.highlightedFields.set(new Set(['title', 'summary', 'content', 'researchAreaId']));
+        this.error.set('Taslak için en az bir alan doldurun.');
+        return;
+      }
+    }
+
     const body = {
-      title: raw.title,
-      content: raw.content,
-      summary: raw.summary.trim() ? raw.summary.trim() : null,
-      researchAreaId: raw.researchAreaId,
+      title,
+      content: raw.content ?? '',
+      summary: summary.length > 0 ? summary : null,
+      researchAreaId,
       submitForReview,
     };
 
     this.submitting.set(true);
     this.error.set(null);
+    this.highlightedFields.set(new Set());
 
     const id = this.editId();
     const onOk = () => {

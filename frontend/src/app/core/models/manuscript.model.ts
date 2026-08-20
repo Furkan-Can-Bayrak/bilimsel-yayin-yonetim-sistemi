@@ -65,7 +65,7 @@ export interface AdminManuscriptListItem {
   summary: string | null;
   publishedAt: string | null;
   status: ManuscriptStatus;
-  researchAreaId: number;
+  researchAreaId: number | null;
   researchAreaName: string;
   authorId: number;
   authorName: string;
@@ -80,7 +80,7 @@ export interface AdminManuscriptDetail {
   summary: string | null;
   publishedAt: string | null;
   status: ManuscriptStatus;
-  researchAreaId: number;
+  researchAreaId: number | null;
   researchAreaName: string;
   authorId: number;
   authorName: string;
@@ -91,7 +91,7 @@ export interface CreateManuscriptRequest {
   title: string;
   content: string;
   summary: string | null;
-  researchAreaId: number;
+  researchAreaId: number | null;
   submitForReview?: boolean;
 }
 
@@ -99,7 +99,7 @@ export interface UpdateManuscriptRequest {
   title: string;
   content: string;
   summary: string | null;
-  researchAreaId: number;
+  researchAreaId: number | null;
   submitForReview?: boolean;
 }
 
