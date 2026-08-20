@@ -109,7 +109,12 @@ td {
   text-align: left;
   padding: 0.75rem 0.9rem;
   border-bottom: 1px solid var(--line);
-  vertical-align: top;
+  vertical-align: middle;
+}
+
+td.actions {
+  width: 1%;
+  white-space: nowrap;
 }
 
 th {
@@ -122,12 +127,6 @@ th {
 
 tr:last-child td {
   border-bottom: none;
-}
-
-.slug {
-  font-size: 0.8rem;
-  color: var(--muted);
-  margin-top: 0.15rem;
 }
 
 .badge {
@@ -160,45 +159,137 @@ tr:last-child td {
 }
 
 .review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
   margin-top: 0.35rem;
   font-size: 0.8rem;
   color: var(--muted);
-  white-space: normal;
-  max-width: 16rem;
 }
 
-.review-comments {
-  display: block;
-  margin-top: 0.2rem;
-  color: var(--body);
+.btn.tiny {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.12rem 0.4rem;
+  line-height: 1.2;
 }
 
-.assign {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+.icon-btn {
+  display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
-}
-
-.assign select {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.3rem 0.4rem;
-  border: 1px solid var(--line);
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
   border-radius: 5px;
-  background: color-mix(in srgb, var(--surface) 85%, white);
-  color: var(--ink);
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
 }
 
-.actions {
+.icon-btn svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.icon-btn.accept {
+  color: #0f6e56;
+  border-color: #b7d9ce;
+}
+
+.icon-btn.reject {
+  color: #9b1c1c;
+  border-color: #e2b4b4;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgb(28 24 20 / 45%);
+}
+
+.modal {
+  width: min(26rem, 100%);
+  padding: 1.25rem 1.35rem 1.15rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 12px 40px rgb(28 24 20 / 18%);
+}
+
+.modal h2 {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  margin: 0 0 0.35rem;
+}
+
+.modal-lead {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.report-meta {
+  margin: -0.5rem 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.report-body {
+  max-height: min(22rem, 55vh);
+  overflow: auto;
+  margin: 0 0 0.35rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 88%, white);
+  white-space: pre-wrap;
+  line-height: 1.5;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.modal.modal-report {
+  width: min(32rem, 100%);
+}
+
+.modal .field {
+  margin-bottom: 1rem;
+}
+
+.modal .field select {
+  min-width: 100%;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .btn {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   font: inherit;
   font-size: 0.85rem;

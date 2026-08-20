@@ -14,10 +14,6 @@
       @if (canCreate) {
         <a routerLink="/admin/manuscripts/new" class="btn primary">Yeni makale</a>
       }
-      @if (canManageResearchAreas) {
-        <a routerLink="/admin/research-areas" class="btn ghost">Araştırma alanları</a>
-      }
-      <a routerLink="/admin/notifications" class="btn ghost">Bildirimler</a>
     </div>
   </header>
 
@@ -84,7 +80,6 @@
             <tr>
               <td>
                 <strong>{{ manuscript.title }}</strong>
-                <div class="slug">{{ manuscript.slug }}</div>
               </td>
               <td>{{ manuscript.authorName || '—' }}</td>
               <td>{{ manuscript.researchAreaName }}</td>
@@ -94,19 +89,27 @@
                 </span>
                 @if (canViewReviews && manuscript.currentReview) {
                   <div class="review-meta">
-                    Hakem: {{ manuscript.currentReview.reviewerName }}
+                    <span>{{ manuscript.currentReview.reviewerName }}</span>
                     @if (manuscript.currentReview.submittedAtUtc) {
-                      ·
-                      {{
-                        manuscript.currentReview.recommendation
-                          ? recommendationLabels[manuscript.currentReview.recommendation]
-                          : 'Rapor var'
-                      }}
+                      <span>
+                        ·
+                        {{
+                          manuscript.currentReview.recommendation
+                            ? recommendationLabels[manuscript.currentReview.recommendation]
+                            : 'Rapor var'
+                        }}
+                      </span>
                       @if (manuscript.currentReview.comments) {
-                        <span class="review-comments">{{ manuscript.currentReview.comments }}</span>
+                        <button
+                          type="button"
+                          class="btn ghost tiny"
+                          (click)="openReport(manuscript)"
+                        >
+                          Rapor
+                        </button>
                       }
                     } @else {
-                      · rapor bekleniyor
+                      <span>· bekleniyor</span>
                     }
                   </div>
                 }
@@ -119,6 +122,7 @@
                 }
               </td>
               <td class="actions">
+                <div class="actions-row">
                 @if (canSubmit && isOwn(manuscript) && (manuscript.status === 'Draft' || manuscript.status === 'Rejected')) {
                   <button
                     type="button"
@@ -130,42 +134,52 @@
                   </button>
                 }
                 @if (canAssign && manuscript.status === 'Submitted') {
-                  <div class="assign">
-                    <select
-                      [name]="'reviewer-' + manuscript.id"
-                      [(ngModel)]="selectedReviewerId[manuscript.id]"
-                    >
-                      <option [ngValue]="null">Hakem seç…</option>
-                      @for (candidate of candidatesByManuscript()[manuscript.id] ?? []; track candidate.id) {
-                        <option [ngValue]="candidate.id">{{ candidate.firstName }} {{ candidate.lastName }}</option>
-                      }
-                    </select>
-                    <button
-                      type="button"
-                      class="btn ghost"
-                      [disabled]="busyId() === manuscript.id"
-                      (click)="assign(manuscript)"
-                    >
-                      Ata
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    class="btn ghost"
+                    [disabled]="busyId() === manuscript.id"
+                    (click)="openAssign(manuscript)"
+                  >
+                    Hakem ata
+                  </button>
                 }
                 @if (canDecide && (manuscript.status === 'Submitted' || manuscript.status === 'UnderReview')) {
                   <button
                     type="button"
-                    class="btn ghost"
+                    class="icon-btn accept"
+                    title="Kabul"
+                    aria-label="Kabul"
                     [disabled]="busyId() === manuscript.id"
                     (click)="accept(manuscript)"
                   >
-                    Kabul
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M2.5 8.5 6 12l7.5-8"
+                      />
+                    </svg>
                   </button>
                   <button
                     type="button"
-                    class="btn ghost"
+                    class="icon-btn reject"
+                    title="Ret"
+                    aria-label="Ret"
                     [disabled]="busyId() === manuscript.id"
                     (click)="reject(manuscript)"
                   >
-                    Ret
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        d="M4 4l8 8M12 4l-8 8"
+                      />
+                    </svg>
                   </button>
                 }
                 @if (canPublish && manuscript.status === 'Accepted') {
@@ -201,6 +215,7 @@
                     Sil
                   </button>
                 }
+                </div>
               </td>
             </tr>
           }
@@ -231,3 +246,69 @@
     }
   }
 </section>
+
+@if (assignTarget(); as target) {
+  <div class="modal-backdrop" (click)="closeAssign()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="assign-title" (click)="$event.stopPropagation()">
+      <h2 id="assign-title">Hakem ata</h2>
+      <p class="modal-lead">{{ target.title }}</p>
+
+      @if (modalError()) {
+        <p class="error">{{ modalError() }}</p>
+      }
+
+      @if (candidatesLoading()) {
+        <p class="muted">Hakemler yükleniyor…</p>
+      } @else if (modalCandidates().length === 0) {
+        <p class="muted">Atanabilecek hakem yok.</p>
+      } @else {
+        <label class="field">
+          <span>Hakem</span>
+          <select name="modalReviewerId" [(ngModel)]="modalReviewerId">
+            <option [ngValue]="null">Seç…</option>
+            @for (candidate of modalCandidates(); track candidate.id) {
+              <option [ngValue]="candidate.id">{{ candidate.firstName }} {{ candidate.lastName }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" (click)="closeAssign()">İptal</button>
+        <button
+          type="button"
+          class="btn primary"
+          [disabled]="!modalReviewerId || busyId() === target.id || candidatesLoading()"
+          (click)="confirmAssign()"
+        >
+          Ata
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (reportTarget(); as report) {
+  <div class="modal-backdrop" (click)="closeReport()">
+    <div
+      class="modal modal-report"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="report-title"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="report-title">Hakem raporu</h2>
+      <p class="modal-lead">{{ report.title }}</p>
+      <p class="report-meta">
+        {{ report.review.reviewerName }}
+        @if (report.review.recommendation) {
+          · {{ recommendationLabels[report.review.recommendation] }}
+        }
+      </p>
+      <div class="report-body">{{ report.review.comments }}</div>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" (click)="closeReport()">Kapat</button>
+      </div>
+    </div>
+  </div>
+}

@@ -74,22 +74,47 @@
           </button>
         }
         @if (isEdit && canAssign) {
-          <select name="reviewerId" [(ngModel)]="selectedReviewerId" [ngModelOptions]="{ standalone: true }">
-            <option [ngValue]="null">Hakem seç…</option>
-            @for (candidate of candidates(); track candidate.id) {
-              <option [ngValue]="candidate.id">{{ candidate.firstName }} {{ candidate.lastName }}</option>
-            }
-          </select>
-          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="assignReviewer()">
+          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="openAssign()">
             Hakem ata
           </button>
         }
         @if (isEdit && canDecide) {
-          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="accept()">
-            Kabul
+          <button
+            type="button"
+            class="icon-btn accept"
+            title="Kabul"
+            aria-label="Kabul"
+            [disabled]="submitting()"
+            (click)="accept()"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M2.5 8.5 6 12l7.5-8"
+              />
+            </svg>
           </button>
-          <button type="button" class="btn ghost" [disabled]="submitting()" (click)="reject()">
-            Ret
+          <button
+            type="button"
+            class="icon-btn reject"
+            title="Ret"
+            aria-label="Ret"
+            [disabled]="submitting()"
+            (click)="reject()"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                d="M4 4l8 8M12 4l-8 8"
+              />
+            </svg>
           </button>
         }
         @if (isEdit && canPublish) {
@@ -107,3 +132,40 @@
     </form>
   }
 </section>
+
+@if (assignOpen()) {
+  <div class="modal-backdrop" (click)="closeAssign()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="assign-title" (click)="$event.stopPropagation()">
+      <h2 id="assign-title">Hakem ata</h2>
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+      @if (candidatesLoading()) {
+        <p class="muted">Hakemler yükleniyor…</p>
+      } @else if (candidates().length === 0) {
+        <p class="muted">Atanabilecek hakem yok.</p>
+      } @else {
+        <label>
+          Hakem
+          <select name="reviewerId" [(ngModel)]="selectedReviewerId" [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seç…</option>
+            @for (candidate of candidates(); track candidate.id) {
+              <option [ngValue]="candidate.id">{{ candidate.firstName }} {{ candidate.lastName }}</option>
+            }
+          </select>
+        </label>
+      }
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" (click)="closeAssign()">İptal</button>
+        <button
+          type="button"
+          class="btn primary"
+          [disabled]="submitting() || !selectedReviewerId || candidatesLoading()"
+          (click)="assignReviewer()"
+        >
+          Ata
+        </button>
+      </div>
+    </div>
+  </div>
+}

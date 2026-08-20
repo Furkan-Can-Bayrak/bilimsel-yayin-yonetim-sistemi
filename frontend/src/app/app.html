@@ -34,14 +34,16 @@
         @if (auth.hasPermission(Permissions.Notifications.View)) {
           <a routerLink="/admin/notifications" routerLinkActive="active">Bildirimler</a>
         }
-        <span class="session">
-          <span class="user">{{ auth.displayName() }}</span>
-          <button type="button" class="linkish" (click)="logout()">Çıkış</button>
-        </span>
       } @else {
         <a routerLink="/admin/login" routerLinkActive="active" class="login-link">Giriş</a>
       }
     </nav>
+    @if (auth.isLoggedIn()) {
+      <span class="session">
+        <span class="user">{{ auth.displayName() }}</span>
+        <button type="button" class="linkish" (click)="logout()">Çıkış</button>
+      </span>
+    }
   </header>
 
   <main>

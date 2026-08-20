@@ -2,7 +2,6 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
-  REVIEW_RECOMMENDATION_LABELS,
   ReviewDetail,
   ReviewRecommendation,
 } from '../../../core/models/review.model';
@@ -17,9 +16,6 @@ import { ReviewService } from '../../../core/services/review.service';
 export class AdminReviewForm implements OnInit {
   private readonly reviewsApi = inject(ReviewService);
   private readonly route = inject(ActivatedRoute);
-
-  readonly recommendationLabels = REVIEW_RECOMMENDATION_LABELS;
-  readonly options: ReviewRecommendation[] = ['Accept', 'Reject'];
 
   readonly review = signal<ReviewDetail | null>(null);
   readonly loading = signal(true);

@@ -7,7 +7,8 @@ using Blog.Domain.Enums;
 namespace Blog.Application.Manuscripts;
 
 /// <summary>
-/// ViewAll: tüm makaleler. Aksi halde kendi yazdığı veya hakem olarak atandığı kayıtlar.
+/// ViewAll: tüm makaleler. Aksi halde yalnızca kendi yazdığı kayıtlar
+/// (hakem atamaları Değerlendirmelerim kuyruğundadır).
 /// </summary>
 internal static class ManuscriptAccess
 {
@@ -45,9 +46,7 @@ internal static class ManuscriptAccess
 
         if (user.UserId is int userId)
         {
-            return query.Where(m =>
-                m.AuthorId == userId ||
-                m.Reviews.Any(r => r.ReviewerId == userId));
+            return query.Where(m => m.AuthorId == userId);
         }
 
         return query.Where(_ => false);

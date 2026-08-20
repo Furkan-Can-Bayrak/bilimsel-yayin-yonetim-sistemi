@@ -9,6 +9,7 @@ import {
   MANUSCRIPT_STATUSES,
   ManuscriptStatus,
   ResearchArea,
+  ReviewSummary,
 } from '../../../core/models/manuscript.model';
 import { REVIEW_RECOMMENDATION_LABELS, ReviewerCandidate } from '../../../core/models/review.model';
 import { Permissions } from '../../../core/auth/permissions';
@@ -43,7 +44,6 @@ export class AdminManuscriptList implements OnInit {
   readonly canAssign = this.auth.hasPermission(Permissions.Reviews.Assign);
   readonly canViewReviews = this.auth.hasPermission(Permissions.Reviews.ViewAll);
   readonly isEditorPanel = this.auth.hasPermission(Permissions.Manuscripts.ViewAll);
-  readonly canManageResearchAreas = this.auth.hasPermission(Permissions.ResearchAreas.Manage);
 
   readonly manuscripts = signal<AdminManuscriptListItem[]>([]);
   readonly researchAreas = signal<ResearchArea[]>([]);
@@ -61,8 +61,13 @@ export class AdminManuscriptList implements OnInit {
   search = '';
   researchAreaId: number | null = null;
   statusFilter: ManuscriptStatus | '' = '';
-  selectedReviewerId: Record<number, number | null> = {};
-  readonly candidatesByManuscript = signal<Partial<Record<number, ReviewerCandidate[]>>>({});
+
+  readonly assignTarget = signal<AdminManuscriptListItem | null>(null);
+  readonly reportTarget = signal<{ title: string; review: ReviewSummary } | null>(null);
+  readonly modalCandidates = signal<ReviewerCandidate[]>([]);
+  readonly candidatesLoading = signal(false);
+  readonly modalError = signal<string | null>(null);
+  modalReviewerId: number | null = null;
 
   ngOnInit(): void {
     this.researchAreasApi.getAll().subscribe({
@@ -117,7 +122,6 @@ export class AdminManuscriptList implements OnInit {
           this.hasNext.set(data.hasNext);
           this.page.set(data.page);
           this.loading.set(false);
-          this.loadCandidates(data.items);
         },
         error: () => {
           this.error.set('Makaleler yüklenemedi. Oturumunuzun süresi dolmuş olabilir.');
@@ -138,14 +142,67 @@ export class AdminManuscriptList implements OnInit {
     this.run(manuscript.id, this.manuscriptsApi.reject(manuscript.id), 'Reddedilemedi.');
   }
 
-  assign(manuscript: AdminManuscriptListItem): void {
-    const reviewerId = this.selectedReviewerId[manuscript.id];
-    if (!reviewerId) {
-      this.error.set('Hakem seçin.');
+  openAssign(manuscript: AdminManuscriptListItem): void {
+    this.assignTarget.set(manuscript);
+    this.modalReviewerId = null;
+    this.modalCandidates.set([]);
+    this.modalError.set(null);
+    this.candidatesLoading.set(true);
+
+    this.reviewsApi.getCandidates(manuscript.id).subscribe({
+      next: (candidates) => {
+        this.modalCandidates.set(candidates);
+        this.candidatesLoading.set(false);
+      },
+      error: (err: unknown) => {
+        this.candidatesLoading.set(false);
+        const detail = (err as { error?: { detail?: string } })?.error?.detail;
+        this.modalError.set(detail ?? 'Hakem listesi alınamadı.');
+      },
+    });
+  }
+
+  closeAssign(): void {
+    this.assignTarget.set(null);
+    this.modalReviewerId = null;
+    this.modalError.set(null);
+  }
+
+  openReport(manuscript: AdminManuscriptListItem): void {
+    const review = manuscript.currentReview;
+    if (!review) {
       return;
     }
 
-    this.run(manuscript.id, this.reviewsApi.assign(manuscript.id, reviewerId), 'Hakem atanamadı.');
+    this.reportTarget.set({ title: manuscript.title, review });
+  }
+
+  closeReport(): void {
+    this.reportTarget.set(null);
+  }
+
+  confirmAssign(): void {
+    const manuscript = this.assignTarget();
+    const reviewerId = this.modalReviewerId;
+    if (!manuscript || !reviewerId) {
+      this.modalError.set('Hakem seçin.');
+      return;
+    }
+
+    this.busyId.set(manuscript.id);
+    this.modalError.set(null);
+    this.reviewsApi.assign(manuscript.id, reviewerId).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.closeAssign();
+        this.reload();
+      },
+      error: (err: unknown) => {
+        this.busyId.set(null);
+        const detail = (err as { error?: { detail?: string } })?.error?.detail;
+        this.modalError.set(detail ?? 'Hakem atanamadı.');
+      },
+    });
   }
 
   publish(manuscript: AdminManuscriptListItem): void {
@@ -178,29 +235,5 @@ export class AdminManuscriptList implements OnInit {
         this.error.set(detail ?? failMessage);
       },
     });
-  }
-
-  private loadCandidates(items: AdminManuscriptListItem[]): void {
-    if (!this.canAssign) {
-      return;
-    }
-
-    for (const manuscript of items) {
-      if (manuscript.status !== 'Submitted') {
-        continue;
-      }
-
-      this.reviewsApi.getCandidates(manuscript.id).subscribe({
-        next: (candidates) => {
-          if (this.selectedReviewerId[manuscript.id] === undefined) {
-            this.selectedReviewerId[manuscript.id] = null;
-          }
-          this.candidatesByManuscript.update((current) => ({
-            ...current,
-            [manuscript.id]: candidates,
-          }));
-        },
-      });
-    }
   }
 }

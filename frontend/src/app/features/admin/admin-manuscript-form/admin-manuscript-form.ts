@@ -42,6 +42,8 @@ export class AdminManuscriptForm implements OnInit {
   readonly authorId = signal<number | null>(null);
   readonly currentReview = signal<ReviewSummary | null>(null);
   readonly candidates = signal<ReviewerCandidate[]>([]);
+  readonly assignOpen = signal(false);
+  readonly candidatesLoading = signal(false);
   selectedReviewerId: number | null = null;
 
   readonly form = this.fb.nonNullable.group({
@@ -191,6 +193,35 @@ export class AdminManuscriptForm implements OnInit {
     this.runWorkflow(this.manuscriptsApi.reject.bind(this.manuscriptsApi), 'Reddedildi', 'Rejected');
   }
 
+  openAssign(): void {
+    const id = this.editId();
+    if (!id) {
+      return;
+    }
+
+    this.assignOpen.set(true);
+    this.selectedReviewerId = null;
+    this.candidates.set([]);
+    this.error.set(null);
+    this.candidatesLoading.set(true);
+
+    this.reviewsApi.getCandidates(id).subscribe({
+      next: (candidates) => {
+        this.candidates.set(candidates);
+        this.candidatesLoading.set(false);
+      },
+      error: (err: unknown) => {
+        this.candidatesLoading.set(false);
+        this.error.set(this.readError(err) ?? 'Hakem listesi alınamadı.');
+      },
+    });
+  }
+
+  closeAssign(): void {
+    this.assignOpen.set(false);
+    this.selectedReviewerId = null;
+  }
+
   assignReviewer(): void {
     const id = this.editId();
     const reviewerId = this.selectedReviewerId;
@@ -206,6 +237,7 @@ export class AdminManuscriptForm implements OnInit {
         this.submitting.set(false);
         this.status.set('UnderReview');
         this.applyLock();
+        this.closeAssign();
         this.loadManuscript(id);
       },
       error: (err: unknown) => {
@@ -263,11 +295,6 @@ export class AdminManuscriptForm implements OnInit {
         this.currentReview.set(manuscript.currentReview);
         this.applyLock();
         this.loading.set(false);
-        if (this.canAssign) {
-          this.reviewsApi.getCandidates(id).subscribe({
-            next: (candidates) => this.candidates.set(candidates),
-          });
-        }
       },
       error: () => {
         this.error.set('Makale bulunamadı.');
