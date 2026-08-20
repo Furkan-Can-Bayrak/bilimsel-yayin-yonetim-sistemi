@@ -98,8 +98,49 @@
 }
 
 .result-meta {
-  margin: 0 0 0.65rem;
+  margin: 0;
   font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.65rem;
+}
+
+.page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.page-size select {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface) 85%, white);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.pager-label {
+  font-size: 0.9rem;
   color: var(--muted);
 }
 

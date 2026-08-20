@@ -27,6 +27,7 @@ export class AdminUsers implements OnInit {
   readonly canManage = this.auth.hasPermission(Permissions.Users.Manage);
   readonly titleOptions = AcademicTitleOptions;
   readonly titleLabel = academicTitleLabel;
+  readonly pageSizeOptions = [10, 25, 50] as const;
 
   readonly users = signal<UserListItem[]>([]);
   readonly roles = signal<RoleListItem[]>([]);
@@ -42,6 +43,13 @@ export class AdminUsers implements OnInit {
   readonly roleEditorError = signal<string | null>(null);
   roleEditorSelectedIds = new Set<number>();
 
+  readonly page = signal(1);
+  readonly pageSize = signal(10);
+  readonly totalCount = signal(0);
+  readonly totalPages = signal(0);
+  readonly hasPrevious = signal(false);
+  readonly hasNext = signal(false);
+
   firstName = '';
   lastName = '';
   academicTitle: AcademicTitleValue = AcademicTitle.Dr;
@@ -50,7 +58,8 @@ export class AdminUsers implements OnInit {
   selectedRoleIds = new Set<number>();
 
   ngOnInit(): void {
-    this.reload();
+    this.loadLookups();
+    this.loadUsers();
   }
 
   emailPreview(): string {
@@ -121,13 +130,32 @@ export class AdminUsers implements OnInit {
       next: () => {
         this.busyUserId.set(null);
         this.closeRoleEditor();
-        this.reload();
+        this.loadUsers();
       },
       error: (err: unknown) => {
         this.busyUserId.set(null);
         this.roleEditorError.set(this.readError(err) ?? 'Rol güncellenemedi.');
       },
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages()) {
+      return;
+    }
+
+    this.page.set(page);
+    this.loadUsers();
+  }
+
+  changePageSize(size: number): void {
+    if (!(this.pageSizeOptions as readonly number[]).includes(size)) {
+      return;
+    }
+
+    this.pageSize.set(size);
+    this.page.set(1);
+    this.loadUsers();
   }
 
   titleValue(value: UserListItem['academicTitle'] | string | number): AcademicTitleValue {
@@ -213,21 +241,37 @@ export class AdminUsers implements OnInit {
   }
 
   reload(): void {
+    this.loadUsers();
+  }
+
+  private loadUsers(): void {
     this.loading.set(true);
     this.error.set(null);
 
-    this.api.getAll().subscribe({
-      next: (data) => {
-        this.users.set(data);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.error.set('Kullanıcılar yüklenemedi.');
-        this.loading.set(false);
-      },
-    });
+    this.api
+      .getAll({
+        page: this.page(),
+        pageSize: this.pageSize(),
+      })
+      .subscribe({
+        next: (data) => {
+          this.users.set(data.items);
+          this.totalCount.set(data.totalCount);
+          this.totalPages.set(data.totalPages);
+          this.hasPrevious.set(data.hasPrevious);
+          this.hasNext.set(data.hasNext);
+          this.page.set(data.page);
+          this.pageSize.set(data.pageSize);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.error.set('Kullanıcılar yüklenemedi.');
+          this.loading.set(false);
+        },
+      });
+  }
 
-    // Rol dropdown her zaman lazım (tablo + create modal).
+  private loadLookups(): void {
     this.api.getRoles().subscribe({
       next: (data) => this.roles.set(data),
       error: () => {

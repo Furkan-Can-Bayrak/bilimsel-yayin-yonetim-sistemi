@@ -36,6 +36,11 @@ export interface UserListItem {
   roleNames: string[];
 }
 
+export interface UserListQuery {
+  page?: number;
+  pageSize?: number;
+}
+
 export interface CreateUserRequest {
   firstName: string;
   lastName: string;

@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PagedResult } from '../models/manuscript.model';
 import {
   AcademicTitleValue,
   CreateUserRequest,
@@ -9,6 +10,7 @@ import {
   InstitutionListItem,
   RoleListItem,
   UserListItem,
+  UserListQuery,
 } from '../models/user.model';
 
 @Injectable({
@@ -20,8 +22,12 @@ export class UserService {
   private readonly rolesUrl = `${environment.apiBaseUrl}/roles`;
   private readonly institutionsUrl = `${environment.apiBaseUrl}/institutions`;
 
-  getAll(): Observable<UserListItem[]> {
-    return this.http.get<UserListItem[]>(this.usersUrl);
+  getAll(query: UserListQuery = {}): Observable<PagedResult<UserListItem>> {
+    const params = new HttpParams()
+      .set('page', String(query.page ?? 1))
+      .set('pageSize', String(query.pageSize ?? 10));
+
+    return this.http.get<PagedResult<UserListItem>>(this.usersUrl, { params });
   }
 
   create(body: CreateUserRequest): Observable<CreateUserResult> {

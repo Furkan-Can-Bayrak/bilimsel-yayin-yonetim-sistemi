@@ -24,10 +24,13 @@ public class UsersController : ControllerBase
 
     [HasPermission(Permissions.Users.View)]
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var items = await _mediator.Send(new GetUsersQuery(), cancellationToken);
-        return Ok(items);
+        var result = await _mediator.Send(new GetUsersQuery(page, pageSize), cancellationToken);
+        return Ok(result);
     }
 
     [HasPermission(Permissions.Users.Manage)]

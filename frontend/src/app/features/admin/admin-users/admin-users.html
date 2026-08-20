@@ -17,10 +17,25 @@
 
   @if (loading()) {
     <p class="muted">Yükleniyor…</p>
-  } @else if (users().length === 0) {
+  } @else if (totalCount() === 0) {
     <p class="muted">Henüz kullanıcı yok.</p>
   } @else {
-    <p class="result-meta">{{ users().length }} kullanıcı</p>
+    <div class="table-toolbar">
+      <p class="result-meta">
+        {{ totalCount() }} kullanıcı · sayfa {{ page() }} / {{ totalPages() || 1 }}
+      </p>
+      <label class="page-size">
+        <span>Sayfa başına</span>
+        <select
+          [ngModel]="pageSize()"
+          (ngModelChange)="changePageSize(+$event)"
+        >
+          @for (size of pageSizeOptions; track size) {
+            <option [ngValue]="size">{{ size }}</option>
+          }
+        </select>
+      </label>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -127,6 +142,28 @@
         </tbody>
       </table>
     </div>
+
+    @if (totalPages() > 1) {
+      <nav class="pager" aria-label="Sayfalama">
+        <button
+          type="button"
+          class="btn ghost"
+          [disabled]="!hasPrevious()"
+          (click)="goToPage(page() - 1)"
+        >
+          Önceki
+        </button>
+        <span class="pager-label">{{ page() }} / {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="btn ghost"
+          [disabled]="!hasNext()"
+          (click)="goToPage(page() + 1)"
+        >
+          Sonraki
+        </button>
+      </nav>
+    }
   }
 </section>
 
