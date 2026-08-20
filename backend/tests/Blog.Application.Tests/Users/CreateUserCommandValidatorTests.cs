@@ -16,21 +16,12 @@ public class CreateUserCommandValidatorTests
     }
 
     [Fact]
-    public void Short_password_fails()
+    public void Missing_institution_fails()
     {
-        var result = _sut.Validate(ValidCommand() with { Password = "123" });
+        var result = _sut.Validate(ValidCommand() with { InstitutionId = 0 });
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateUserCommand.Password));
-    }
-
-    [Fact]
-    public void Invalid_email_fails()
-    {
-        var result = _sut.Validate(ValidCommand() with { Email = "not-an-email" });
-
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateUserCommand.Email));
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateUserCommand.InstitutionId));
     }
 
     [Fact]
@@ -60,12 +51,10 @@ public class CreateUserCommandValidatorTests
     }
 
     private static CreateUserCommand ValidCommand() => new(
-        Email: "yeni@yayin.local",
-        Password: "Password12",
         FirstName: "Ayşe",
         LastName: "Yılmaz",
         AcademicTitle: AcademicTitle.Dr,
         Orcid: null,
-        InstitutionId: null,
+        InstitutionId: 1,
         RoleIds: [1]);
 }

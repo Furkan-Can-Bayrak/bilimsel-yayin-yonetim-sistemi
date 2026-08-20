@@ -19,6 +19,10 @@ public class InstitutionConfiguration : IEntityTypeConfiguration<Institution>
         builder.Property(i => i.Abbreviation)
             .HasMaxLength(20);
 
+        builder.Property(i => i.EmailDomain)
+            .IsRequired()
+            .HasMaxLength(100);
+
         builder.HasIndex(i => i.Name)
             .IsUnique()
             .HasFilter("[DeletedAtUtc] IS NULL");

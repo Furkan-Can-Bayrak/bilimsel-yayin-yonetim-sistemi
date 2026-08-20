@@ -190,64 +190,73 @@ public static class DbSeeder
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    private static readonly (string Name, string? Abbreviation)[] SeedInstitutions =
+    private static readonly (string Name, string? Abbreviation, string EmailDomain)[] SeedInstitutions =
     [
-        ("Orta Doğu Teknik Üniversitesi", "ODTÜ"),
-        ("İstanbul Teknik Üniversitesi", "İTÜ"),
-        ("Ege Üniversitesi", null),
-        ("Ankara Üniversitesi", null),
-        ("Hacettepe Üniversitesi", null),
-        ("Boğaziçi Üniversitesi", null),
-        ("İstanbul Üniversitesi", null),
-        ("Gazi Üniversitesi", null),
-        ("Yıldız Teknik Üniversitesi", "YTÜ"),
-        ("Marmara Üniversitesi", null),
-        ("Dokuz Eylül Üniversitesi", null),
-        ("Çukurova Üniversitesi", null),
-        ("Karadeniz Teknik Üniversitesi", "KTÜ"),
-        ("Atatürk Üniversitesi", null),
-        ("Erciyes Üniversitesi", null),
-        ("Selçuk Üniversitesi", null),
-        ("Bursa Uludağ Üniversitesi", null),
-        ("Akdeniz Üniversitesi", null),
-        ("Gaziantep Üniversitesi", null),
-        ("Fırat Üniversitesi", null),
-        ("Sabancı Üniversitesi", null),
-        ("Koç Üniversitesi", null),
-        ("Bilkent Üniversitesi", null)
+        ("Orta Doğu Teknik Üniversitesi", "ODTÜ", "metu.edu.tr"),
+        ("İstanbul Teknik Üniversitesi", "İTÜ", "itu.edu.tr"),
+        ("Ege Üniversitesi", null, "ege.edu.tr"),
+        ("Ankara Üniversitesi", null, "ankara.edu.tr"),
+        ("Hacettepe Üniversitesi", null, "hacettepe.edu.tr"),
+        ("Boğaziçi Üniversitesi", null, "boun.edu.tr"),
+        ("İstanbul Üniversitesi", null, "istanbul.edu.tr"),
+        ("Gazi Üniversitesi", null, "gazi.edu.tr"),
+        ("Yıldız Teknik Üniversitesi", "YTÜ", "yildiz.edu.tr"),
+        ("Marmara Üniversitesi", null, "marmara.edu.tr"),
+        ("Dokuz Eylül Üniversitesi", null, "deu.edu.tr"),
+        ("Çukurova Üniversitesi", null, "cu.edu.tr"),
+        ("Karadeniz Teknik Üniversitesi", "KTÜ", "ktu.edu.tr"),
+        ("Atatürk Üniversitesi", null, "atauni.edu.tr"),
+        ("Erciyes Üniversitesi", null, "erciyes.edu.tr"),
+        ("Selçuk Üniversitesi", null, "selcuk.edu.tr"),
+        ("Bursa Uludağ Üniversitesi", null, "uludag.edu.tr"),
+        ("Akdeniz Üniversitesi", null, "akdeniz.edu.tr"),
+        ("Gaziantep Üniversitesi", null, "gantep.edu.tr"),
+        ("Fırat Üniversitesi", null, "firat.edu.tr"),
+        ("Sabancı Üniversitesi", null, "sabanciuniv.edu"),
+        ("Koç Üniversitesi", null, "ku.edu.tr"),
+        ("Bilkent Üniversitesi", null, "bilkent.edu.tr")
     ];
 
     /// <summary>
-    /// Eksik kurumları ekler. İsim tekil olduğu için mevcut kayıtlara dokunmaz;
-    /// sonradan listeye giren üniversiteler bir sonraki açılışta gelir.
+    /// Eksik kurumları ekler; mevcut kayıtlarda boş EmailDomain varsa doldurur.
     /// </summary>
     private static async Task SeedInstitutionsAsync(
         BlogDbContext context,
         CancellationToken cancellationToken)
     {
-        var existingNames = await context.Institutions
+        var institutions = await context.Institutions
             .IgnoreQueryFilters()
-            .Select(i => i.Name)
             .ToListAsync(cancellationToken);
 
-        var existing = new HashSet<string>(existingNames, StringComparer.OrdinalIgnoreCase);
+        var byName = institutions.ToDictionary(i => i.Name, StringComparer.OrdinalIgnoreCase);
+        var changed = false;
 
-        var missing = SeedInstitutions
-            .Where(i => !existing.Contains(i.Name))
-            .Select(i => new Institution
-            {
-                Name = i.Name,
-                Abbreviation = i.Abbreviation
-            })
-            .ToList();
-
-        if (missing.Count == 0)
+        foreach (var seed in SeedInstitutions)
         {
-            return;
+            if (byName.TryGetValue(seed.Name, out var existing))
+            {
+                if (string.IsNullOrWhiteSpace(existing.EmailDomain))
+                {
+                    existing.EmailDomain = seed.EmailDomain;
+                    changed = true;
+                }
+
+                continue;
+            }
+
+            context.Institutions.Add(new Institution
+            {
+                Name = seed.Name,
+                Abbreviation = seed.Abbreviation,
+                EmailDomain = seed.EmailDomain
+            });
+            changed = true;
         }
 
-        context.Institutions.AddRange(missing);
-        await context.SaveChangesAsync(cancellationToken);
+        if (changed)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
     }
 
     private static async Task SeedUsersAsync(

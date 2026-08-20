@@ -1,3 +1,4 @@
+using Blog.Application.Common;
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Users.Dtos;
@@ -11,13 +12,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Blog.Application.Users.Commands.CreateUser;
 
 public sealed record CreateUserCommand(
-    string Email,
-    string Password,
     string FirstName,
     string LastName,
     AcademicTitle AcademicTitle,
     string? Orcid,
-    int? InstitutionId,
+    int InstitutionId,
     IReadOnlyList<int> RoleIds) : IRequest<CreateUserResult>;
 
 public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
@@ -34,13 +33,14 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
 
     public CreateUserCommandValidator()
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(200);
-        RuleFor(x => x.Password).NotEmpty().MinimumLength(6).MaximumLength(100);
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(80);
         RuleFor(x => x.AcademicTitle)
             .Must(AllowedTitles.Contains)
             .WithMessage("Geçerli bir akademik unvan seçin.");
+        RuleFor(x => x.InstitutionId)
+            .GreaterThan(0)
+            .WithMessage("Kurum zorunludur.");
         RuleFor(x => x.RoleIds)
             .NotNull()
             .Must(ids => ids.Count > 0)
@@ -49,9 +49,6 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
             .Length(19)
             .Matches(@"^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$")
             .When(x => !string.IsNullOrWhiteSpace(x.Orcid));
-        RuleFor(x => x.InstitutionId)
-            .GreaterThan(0)
-            .When(x => x.InstitutionId is not null);
     }
 }
 
@@ -59,26 +56,33 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
 {
     private readonly IApplicationDbContext _db;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly IEmailService _email;
 
-    public CreateUserCommandHandler(IApplicationDbContext db, IPasswordHasher<User> passwordHasher)
+    public CreateUserCommandHandler(
+        IApplicationDbContext db,
+        IPasswordHasher<User> passwordHasher,
+        IEmailService email)
     {
         _db = db;
         _passwordHasher = passwordHasher;
+        _email = email;
     }
 
     public async Task<CreateUserResult> Handle(
         CreateUserCommand request,
         CancellationToken cancellationToken)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
+        var institution = await _db.Institutions
+            .FirstOrDefaultAsync(i => i.Id == request.InstitutionId, cancellationToken);
 
-        var emailTaken = await _db.Users
-            .IgnoreQueryFilters()
-            .AnyAsync(u => u.Email == email, cancellationToken);
-
-        if (emailTaken)
+        if (institution is null)
         {
-            throw new ConflictException("Bu e-posta adresi zaten kayıtlı.");
+            throw new NotFoundException($"Kurum bulunamadı: {request.InstitutionId}");
+        }
+
+        if (string.IsNullOrWhiteSpace(institution.EmailDomain))
+        {
+            throw new ConflictException("Seçilen kurumun e-posta alanı tanımlı değil.");
         }
 
         var roleIds = request.RoleIds.Distinct().ToArray();
@@ -88,17 +92,6 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         if (existingRoleCount != roleIds.Length)
         {
             throw new ConflictException("Seçilen rollerden biri bulunamadı.");
-        }
-
-        if (request.InstitutionId is int institutionId)
-        {
-            var institutionExists = await _db.Institutions
-                .AnyAsync(i => i.Id == institutionId, cancellationToken);
-
-            if (!institutionExists)
-            {
-                throw new NotFoundException($"Kurum bulunamadı: {institutionId}");
-            }
         }
 
         var orcid = string.IsNullOrWhiteSpace(request.Orcid)
@@ -117,11 +110,30 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
             }
         }
 
+        string email;
+        try
+        {
+            email = await UserEmailHelper.BuildUniqueEmailAsync(
+                request.FirstName,
+                request.LastName,
+                institution.EmailDomain,
+                candidate => _db.Users
+                    .IgnoreQueryFilters()
+                    .AnyAsync(u => u.Email == candidate, cancellationToken),
+                cancellationToken);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new ConflictException(ex.Message);
+        }
+
+        var password = UserEmailHelper.GeneratePassword();
+
         var user = new User
         {
             Email = email,
             AcademicTitle = request.AcademicTitle,
-            InstitutionId = request.InstitutionId,
+            InstitutionId = institution.Id,
             Orcid = orcid,
             IsActive = true,
             SecurityVersion = 1,
@@ -129,7 +141,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         };
 
         user.SetName(request.FirstName, request.LastName);
-        user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+        user.PasswordHash = _passwordHasher.HashPassword(user, password);
 
         foreach (var roleId in roleIds)
         {
@@ -138,6 +150,21 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _email.SendAsync(
+            email,
+            "BYYS hesap bilgileriniz",
+            $"""
+            Merhaba {user.DisplayName},
+
+            Bilimsel Yayın Yönetim Sistemi hesabınız oluşturuldu.
+
+            E-posta: {email}
+            Geçici şifre: {password}
+
+            Giriş yaptıktan sonra şifrenizi değiştirmeniz önerilir.
+            """,
+            cancellationToken);
 
         return new CreateUserResult(user.Id, user.Email);
     }
