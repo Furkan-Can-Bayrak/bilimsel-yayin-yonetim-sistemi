@@ -10,9 +10,9 @@ namespace Blog.Infrastructure.Persistence;
 public static class DbSeeder
 {
     private const string AdminRoleName = "Admin";
-    private const string EditorRoleName = "Editor";
-    private const string ReviewerRoleName = "Reviewer";
-    private const string AuthorRoleName = "Author";
+    private const string EditorRoleName = "Editör";
+    private const string ReviewerRoleName = "Hakem";
+    private const string AuthorRoleName = "Yazar";
 
     public static async Task SeedAsync(
         BlogDbContext context,
@@ -27,7 +27,6 @@ public static class DbSeeder
         await SeedInstitutionsAsync(context, cancellationToken);
         await SeedUsersAsync(context, configuration, cancellationToken);
         await SyncDevelopmentPasswordsAsync(context, configuration, cancellationToken);
-        await SeedContentAsync(context, cancellationToken);
     }
 
     /// <summary>
@@ -418,59 +417,6 @@ public static class DbSeeder
             user.PasswordHash = hasher.HashPassword(user, demoPassword);
             user.SecurityVersion += 1;
         }
-
-        await context.SaveChangesAsync(cancellationToken);
-    }
-
-    private static async Task SeedContentAsync(BlogDbContext context, CancellationToken cancellationToken)
-    {
-        if (await context.ResearchAreas.IgnoreQueryFilters().AnyAsync(cancellationToken))
-        {
-            return;
-        }
-
-        var computerScience = new ResearchArea
-        {
-            Name = "Bilgisayar Bilimleri",
-            Slug = "bilgisayar-bilimleri"
-        };
-
-        context.ResearchAreas.Add(computerScience);
-        await context.SaveChangesAsync(cancellationToken);
-
-        var author = await context.Users
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Email == "author@yayin.local", cancellationToken)
-            ?? await context.Users.IgnoreQueryFilters().FirstAsync(cancellationToken);
-
-        var publishedAt = DateTime.UtcNow;
-        var first = new Manuscript
-        {
-            Title = "Derin Öğrenme ile Makale Sınıflandırma",
-            Slug = "derin-ogrenme-ile-makale-siniflandirma",
-            Summary = "Bilimsel metinlerin araştırma alanına otomatik atanması üzerine bir çalışma.",
-            Content = "Bu örnek makale seed verisidir. Değerlendirme ve yayın akışı sonraki adımlarda genişleyecek.",
-            ResearchAreaId = computerScience.Id,
-            AuthorId = author.Id
-        };
-        first.Submit();
-        first.Accept();
-        first.Publish(publishedAt);
-
-        var second = new Manuscript
-        {
-            Title = "Açık Erişim Dergilerinde Hakem Atama",
-            Slug = "acik-erisim-dergilerinde-hakem-atama",
-            Summary = "Hakem yükünün araştırma alanına göre dengelenmesi.",
-            Content = "Bu örnek makale, editör kararlarının ve hakem atamasının sistemde nasıl modelleneceğini gösterir.",
-            ResearchAreaId = computerScience.Id,
-            AuthorId = author.Id
-        };
-        second.Submit();
-        second.Accept();
-        second.Publish(publishedAt);
-
-        context.Manuscripts.AddRange(first, second);
 
         await context.SaveChangesAsync(cancellationToken);
     }
