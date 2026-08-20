@@ -15,11 +15,23 @@
       }
     </p>
 
-    @if (review()!.manuscriptSummary) {
-      <p class="summary">{{ review()!.manuscriptSummary }}</p>
-    }
+    <section class="ms-section">
+      <h2>Özet</h2>
+      @if (review()!.manuscriptSummary) {
+        <p class="summary">{{ review()!.manuscriptSummary }}</p>
+      } @else {
+        <p class="muted empty-hint">Özet girilmemiş.</p>
+      }
+    </section>
 
-    <article class="manuscript">{{ review()!.manuscriptContent }}</article>
+    <section class="ms-section">
+      <h2>İçerik</h2>
+      @if (review()!.manuscriptContent?.trim()) {
+        <article class="manuscript">{{ review()!.manuscriptContent }}</article>
+      } @else {
+        <p class="muted empty-hint">İçerik girilmemiş.</p>
+      }
+    </section>
 
     <form class="form" (ngSubmit)="submit()">
       <fieldset class="reco" [disabled]="isSubmitted || submitting()">
