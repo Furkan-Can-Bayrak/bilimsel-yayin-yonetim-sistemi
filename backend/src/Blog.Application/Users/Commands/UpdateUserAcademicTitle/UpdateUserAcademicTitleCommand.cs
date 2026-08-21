@@ -1,9 +1,9 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
+using Blog.Domain.Entities;
 using Blog.Domain.Enums;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Users.Commands.UpdateUserAcademicTitle;
 
@@ -33,17 +33,18 @@ public sealed class UpdateUserAcademicTitleCommandValidator : AbstractValidator<
 public sealed class UpdateUserAcademicTitleCommandHandler
     : IRequestHandler<UpdateUserAcademicTitleCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IRepository<User> _users;
+    private readonly IUnitOfWork _uow;
 
-    public UpdateUserAcademicTitleCommandHandler(IApplicationDbContext db)
+    public UpdateUserAcademicTitleCommandHandler(IRepository<User> users, IUnitOfWork uow)
     {
-        _db = db;
+        _users = users;
+        _uow = uow;
     }
 
     public async Task Handle(UpdateUserAcademicTitleCommand request, CancellationToken cancellationToken)
     {
-        var user = await _db.Users
-            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+        var user = await _users.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user is null)
         {
@@ -56,6 +57,6 @@ public sealed class UpdateUserAcademicTitleCommandHandler
         }
 
         user.AcademicTitle = request.AcademicTitle;
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

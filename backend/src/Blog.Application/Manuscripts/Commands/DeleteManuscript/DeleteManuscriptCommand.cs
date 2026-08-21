@@ -1,8 +1,8 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
+using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Manuscripts.Commands.DeleteManuscript;
 
@@ -18,24 +18,25 @@ public sealed class DeleteManuscriptCommandValidator : AbstractValidator<DeleteM
 
 public sealed class DeleteManuscriptCommandHandler : IRequestHandler<DeleteManuscriptCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IRepository<Manuscript> _manuscripts;
+    private readonly IUnitOfWork _uow;
 
-    public DeleteManuscriptCommandHandler(IApplicationDbContext db)
+    public DeleteManuscriptCommandHandler(IRepository<Manuscript> manuscripts, IUnitOfWork uow)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _uow = uow;
     }
 
     public async Task Handle(DeleteManuscriptCommand request, CancellationToken cancellationToken)
     {
-        var manuscript = await _db.Manuscripts
-            .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
+        var manuscript = await _manuscripts.GetByIdAsync(request.Id, cancellationToken);
 
         if (manuscript is null)
         {
             throw new NotFoundException($"Makale bulunamadı: {request.Id}");
         }
 
-        _db.Manuscripts.Remove(manuscript);
-        await _db.SaveChangesAsync(cancellationToken);
+        _manuscripts.Remove(manuscript);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

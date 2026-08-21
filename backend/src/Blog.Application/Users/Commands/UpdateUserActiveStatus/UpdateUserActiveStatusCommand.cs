@@ -1,8 +1,8 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
+using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Users.Commands.UpdateUserActiveStatus;
 
@@ -20,19 +20,23 @@ public sealed class UpdateUserActiveStatusCommandValidator
 public sealed class UpdateUserActiveStatusCommandHandler
     : IRequestHandler<UpdateUserActiveStatusCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IRepository<User> _users;
+    private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
 
-    public UpdateUserActiveStatusCommandHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public UpdateUserActiveStatusCommandHandler(
+        IRepository<User> users,
+        IUnitOfWork uow,
+        ICurrentUser currentUser)
     {
-        _db = db;
+        _users = users;
+        _uow = uow;
         _currentUser = currentUser;
     }
 
     public async Task Handle(UpdateUserActiveStatusCommand request, CancellationToken cancellationToken)
     {
-        var user = await _db.Users
-            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+        var user = await _users.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user is null)
         {
@@ -51,6 +55,6 @@ public sealed class UpdateUserActiveStatusCommandHandler
 
         user.IsActive = request.IsActive;
         user.SecurityVersion += 1;
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

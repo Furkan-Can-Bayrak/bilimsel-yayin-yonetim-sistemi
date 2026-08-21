@@ -1,8 +1,8 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Domain.Authorization;
+using Blog.Domain.Entities;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Manuscripts.Commands.SubmitManuscript;
 
@@ -10,24 +10,26 @@ public sealed record SubmitManuscriptCommand(int Id) : IRequest;
 
 public sealed class SubmitManuscriptCommandHandler : IRequestHandler<SubmitManuscriptCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IRepository<Manuscript> _manuscripts;
+    private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
     private readonly INotificationService _notifications;
 
     public SubmitManuscriptCommandHandler(
-        IApplicationDbContext db,
+        IRepository<Manuscript> manuscripts,
+        IUnitOfWork uow,
         ICurrentUser currentUser,
         INotificationService notifications)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _uow = uow;
         _currentUser = currentUser;
         _notifications = notifications;
     }
 
     public async Task Handle(SubmitManuscriptCommand request, CancellationToken cancellationToken)
     {
-        var manuscript = await _db.Manuscripts
-            .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
+        var manuscript = await _manuscripts.GetByIdAsync(request.Id, cancellationToken);
 
         if (manuscript is null)
         {
@@ -48,7 +50,7 @@ public sealed class SubmitManuscriptCommandHandler : IRequestHandler<SubmitManus
         }
 
         ManuscriptAccess.ApplyTransition(manuscript.Submit);
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         await _notifications.NotifyUsersWithPermissionAsync(
             Permissions.Manuscripts.Decide,

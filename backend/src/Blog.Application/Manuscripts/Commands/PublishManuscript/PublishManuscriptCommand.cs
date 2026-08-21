@@ -1,8 +1,8 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Common.Options;
+using Blog.Domain.Entities;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Blog.Application.Manuscripts.Commands.PublishManuscript;
@@ -11,18 +11,21 @@ public sealed record PublishManuscriptCommand(int Id) : IRequest;
 
 public sealed class PublishManuscriptCommandHandler : IRequestHandler<PublishManuscriptCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IRepository<Manuscript> _manuscripts;
+    private readonly IUnitOfWork _uow;
     private readonly IEmailService _email;
     private readonly INotificationService _notifications;
     private readonly EmailOptions _emailOptions;
 
     public PublishManuscriptCommandHandler(
-        IApplicationDbContext db,
+        IRepository<Manuscript> manuscripts,
+        IUnitOfWork uow,
         IEmailService email,
         INotificationService notifications,
         IOptions<EmailOptions> emailOptions)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _uow = uow;
         _email = email;
         _notifications = notifications;
         _emailOptions = emailOptions.Value;
@@ -30,8 +33,7 @@ public sealed class PublishManuscriptCommandHandler : IRequestHandler<PublishMan
 
     public async Task Handle(PublishManuscriptCommand request, CancellationToken cancellationToken)
     {
-        var manuscript = await _db.Manuscripts
-            .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
+        var manuscript = await _manuscripts.GetByIdAsync(request.Id, cancellationToken);
 
         if (manuscript is null)
         {
@@ -39,7 +41,7 @@ public sealed class PublishManuscriptCommandHandler : IRequestHandler<PublishMan
         }
 
         ManuscriptAccess.ApplyTransition(() => manuscript.Publish(DateTime.UtcNow));
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         await ManuscriptPublication.NotifyPublishedAsync(
             _notifications,

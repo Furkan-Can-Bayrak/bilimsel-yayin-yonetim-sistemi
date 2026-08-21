@@ -1,7 +1,7 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
+using Blog.Domain.Entities;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Manuscripts.Commands.UnpublishManuscript;
 
@@ -9,17 +9,18 @@ public sealed record UnpublishManuscriptCommand(int Id) : IRequest;
 
 public sealed class UnpublishManuscriptCommandHandler : IRequestHandler<UnpublishManuscriptCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IRepository<Manuscript> _manuscripts;
+    private readonly IUnitOfWork _uow;
 
-    public UnpublishManuscriptCommandHandler(IApplicationDbContext db)
+    public UnpublishManuscriptCommandHandler(IRepository<Manuscript> manuscripts, IUnitOfWork uow)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _uow = uow;
     }
 
     public async Task Handle(UnpublishManuscriptCommand request, CancellationToken cancellationToken)
     {
-        var manuscript = await _db.Manuscripts
-            .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
+        var manuscript = await _manuscripts.GetByIdAsync(request.Id, cancellationToken);
 
         if (manuscript is null)
         {
@@ -27,6 +28,6 @@ public sealed class UnpublishManuscriptCommandHandler : IRequestHandler<Unpublis
         }
 
         ManuscriptAccess.ApplyTransition(manuscript.Unpublish);
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }
