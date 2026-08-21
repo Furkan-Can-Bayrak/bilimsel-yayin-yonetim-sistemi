@@ -208,7 +208,7 @@
                     Yayından al
                   </button>
                 }
-                @if (canUpdate) {
+                @if (canShowEdit(manuscript)) {
                   <a [routerLink]="['/admin/manuscripts', manuscript.id, 'edit']" class="btn ghost">Düzenle</a>
                 }
                 @if (canDelete) {

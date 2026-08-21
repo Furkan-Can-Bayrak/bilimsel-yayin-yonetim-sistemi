@@ -18,24 +18,16 @@ internal static class ManuscriptAccess
     public static bool CanView(int authorId, ICurrentUser user, bool isAssignedReviewer = false) =>
         CanViewAll(user) || user.UserId == authorId || isAssignedReviewer;
 
-    /// <summary>Kim: Update izni ve (yazar veya ViewAll).</summary>
+    /// <summary>Kim: Update izni ve makalenin yazarı. ViewAll düzenleme hakkı vermez.</summary>
     public static bool CanUpdate(int authorId, ICurrentUser user) =>
         user.HasPermission(Permissions.Manuscripts.Update) &&
-        (user.UserId == authorId || CanViewAll(user));
+        user.UserId == authorId;
 
     /// <summary>
-    /// Ne zaman: ViewAll her durumda; yazar yalnız taslak/ret.
-    /// Kim olduğu burada bakılmaz; önce <see cref="CanUpdate"/> (403), sonra bu (409).
+    /// Ne zaman: yalnız taslak veya ret. Kim olduğu <see cref="CanUpdate"/> ile kontrol edilir.
     /// </summary>
-    public static bool CanEditContent(Manuscript manuscript, ICurrentUser user)
-    {
-        if (CanViewAll(user))
-        {
-            return true;
-        }
-
-        return manuscript.Status is ManuscriptStatus.Draft or ManuscriptStatus.Rejected;
-    }
+    public static bool CanEditContent(Manuscript manuscript, ICurrentUser user) =>
+        manuscript.Status is ManuscriptStatus.Draft or ManuscriptStatus.Rejected;
 
     public static IQueryable<Manuscript> VisibleTo(IQueryable<Manuscript> query, ICurrentUser user)
     {

@@ -74,6 +74,18 @@ export class AdminManuscriptList implements OnInit {
     this.reload();
   }
 
+  isOwn(manuscript: AdminManuscriptListItem): boolean {
+    return this.auth.userId() === manuscript.authorId;
+  }
+
+  canShowEdit(manuscript: AdminManuscriptListItem): boolean {
+    return (
+      this.canUpdate &&
+      this.isOwn(manuscript) &&
+      (manuscript.status === 'Draft' || manuscript.status === 'Rejected')
+    );
+  }
+
   applyFilters(): void {
     this.page.set(1);
     this.reload();

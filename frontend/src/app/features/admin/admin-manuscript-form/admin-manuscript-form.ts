@@ -70,12 +70,7 @@ export class AdminManuscriptForm implements OnInit {
       return true;
     }
 
-    if (this.auth.hasPermission(Permissions.Manuscripts.ViewAll) &&
-        this.auth.hasPermission(Permissions.Manuscripts.Update)) {
-      return true;
-    }
-
-    return this.status() === 'Draft' || this.status() === 'Rejected';
+    return this.isOwn && (this.status() === 'Draft' || this.status() === 'Rejected');
   }
 
   get isOwn(): boolean {
