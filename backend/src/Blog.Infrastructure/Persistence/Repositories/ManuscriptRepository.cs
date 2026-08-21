@@ -30,4 +30,9 @@ public sealed class ManuscriptRepository : Repository<Manuscript>, IManuscriptRe
         string slug,
         CancellationToken cancellationToken = default) =>
         Set.FirstOrDefaultAsync(m => m.Slug == slug, cancellationToken);
+
+    public Task<bool> AnyInResearchAreaAsync(
+        int researchAreaId,
+        CancellationToken cancellationToken = default) =>
+        Set.AnyAsync(m => m.ResearchAreaId == researchAreaId, cancellationToken);
 }

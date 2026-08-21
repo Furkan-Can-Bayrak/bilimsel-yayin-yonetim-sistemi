@@ -3,7 +3,6 @@ using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.ResearchAreas.Commands.UpdateResearchArea;
 
@@ -20,17 +19,18 @@ public sealed class UpdateResearchAreaCommandValidator : AbstractValidator<Updat
 
 public sealed class UpdateResearchAreaCommandHandler : IRequestHandler<UpdateResearchAreaCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IResearchAreaRepository _researchAreas;
+    private readonly IUnitOfWork _uow;
 
-    public UpdateResearchAreaCommandHandler(IApplicationDbContext db)
+    public UpdateResearchAreaCommandHandler(IResearchAreaRepository researchAreas, IUnitOfWork uow)
     {
-        _db = db;
+        _researchAreas = researchAreas;
+        _uow = uow;
     }
 
     public async Task Handle(UpdateResearchAreaCommand request, CancellationToken cancellationToken)
     {
-        var area = await _db.ResearchAreas
-            .FirstOrDefaultAsync(a => a.Id == request.Id, cancellationToken);
+        var area = await _researchAreas.GetByIdAsync(request.Id, cancellationToken);
 
         if (area is null)
         {
@@ -40,12 +40,12 @@ public sealed class UpdateResearchAreaCommandHandler : IRequestHandler<UpdateRes
         var slug = await SlugHelper.GenerateUniqueSlugAsync(
             request.Name,
             nameof(request.Name),
-            s => _db.ResearchAreas.AnyAsync(a => a.Slug == s && a.Id != request.Id, cancellationToken),
+            s => _researchAreas.SlugExistsAsync(s, request.Id, cancellationToken),
             cancellationToken);
 
         area.Name = request.Name.Trim();
         area.Slug = slug;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

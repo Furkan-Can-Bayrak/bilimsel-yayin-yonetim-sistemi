@@ -2,18 +2,15 @@ using Blog.Domain.Entities;
 
 namespace Blog.Application.Common.Interfaces;
 
-public interface IManuscriptRepository : IRepository<Manuscript>
+public interface IResearchAreaRepository : IRepository<ResearchArea>
 {
+    /// <summary>Verilen slug başka bir kayıtta kullanılıyor mu?</summary>
     Task<bool> SlugExistsAsync(
         string slug,
         int? excludeId = null,
         CancellationToken cancellationToken = default);
 
-    Task<Manuscript?> GetBySlugAsync(
+    Task<ResearchArea?> GetBySlugAsync(
         string slug,
-        CancellationToken cancellationToken = default);
-
-    Task<bool> AnyInResearchAreaAsync(
-        int researchAreaId,
         CancellationToken cancellationToken = default);
 }

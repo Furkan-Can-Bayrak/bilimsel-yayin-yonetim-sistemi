@@ -4,7 +4,6 @@ using Blog.Application.ResearchAreas.Dtos;
 using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.ResearchAreas.Commands.CreateResearchArea;
 
@@ -22,11 +21,13 @@ public sealed class CreateResearchAreaCommandValidator : AbstractValidator<Creat
 public sealed class CreateResearchAreaCommandHandler
     : IRequestHandler<CreateResearchAreaCommand, CreateResearchAreaResult>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IResearchAreaRepository _researchAreas;
+    private readonly IUnitOfWork _uow;
 
-    public CreateResearchAreaCommandHandler(IApplicationDbContext db)
+    public CreateResearchAreaCommandHandler(IResearchAreaRepository researchAreas, IUnitOfWork uow)
     {
-        _db = db;
+        _researchAreas = researchAreas;
+        _uow = uow;
     }
 
     public async Task<CreateResearchAreaResult> Handle(
@@ -36,7 +37,7 @@ public sealed class CreateResearchAreaCommandHandler
         var slug = await SlugHelper.GenerateUniqueSlugAsync(
             request.Name,
             nameof(request.Name),
-            s => _db.ResearchAreas.AnyAsync(a => a.Slug == s, cancellationToken),
+            s => _researchAreas.SlugExistsAsync(s, cancellationToken: cancellationToken),
             cancellationToken);
 
         var area = new ResearchArea
@@ -45,8 +46,8 @@ public sealed class CreateResearchAreaCommandHandler
             Slug = slug
         };
 
-        _db.ResearchAreas.Add(area);
-        await _db.SaveChangesAsync(cancellationToken);
+        await _researchAreas.AddAsync(area, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return new CreateResearchAreaResult(area.Id, area.Slug);
     }
