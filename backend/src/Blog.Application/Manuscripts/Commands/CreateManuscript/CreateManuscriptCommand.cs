@@ -6,7 +6,6 @@ using Blog.Domain.Authorization;
 using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Manuscripts.Commands.CreateManuscript;
 
@@ -55,16 +54,22 @@ public sealed class CreateManuscriptCommandValidator : AbstractValidator<CreateM
 public sealed class CreateManuscriptCommandHandler
     : IRequestHandler<CreateManuscriptCommand, CreateManuscriptResult>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IManuscriptRepository _manuscripts;
+    private readonly IRepository<ResearchArea> _researchAreas;
+    private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
     private readonly INotificationService _notifications;
 
     public CreateManuscriptCommandHandler(
-        IApplicationDbContext db,
+        IManuscriptRepository manuscripts,
+        IRepository<ResearchArea> researchAreas,
+        IUnitOfWork uow,
         ICurrentUser currentUser,
         INotificationService notifications)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _researchAreas = researchAreas;
+        _uow = uow;
         _currentUser = currentUser;
         _notifications = notifications;
     }
@@ -78,8 +83,7 @@ public sealed class CreateManuscriptCommandHandler
 
         if (researchAreaId is int areaId)
         {
-            var areaExists = await _db.ResearchAreas
-                .AnyAsync(a => a.Id == areaId, cancellationToken);
+            var areaExists = await _researchAreas.ExistsAsync(areaId, cancellationToken);
 
             if (!areaExists)
             {
@@ -93,7 +97,7 @@ public sealed class CreateManuscriptCommandHandler
         var slug = await SlugHelper.GenerateUniqueSlugAsync(
             slugSource,
             nameof(request.Title),
-            s => _db.Manuscripts.AnyAsync(m => m.Slug == s, cancellationToken),
+            s => _manuscripts.SlugExistsAsync(s, cancellationToken: cancellationToken),
             cancellationToken);
 
         var manuscript = new Manuscript
@@ -116,8 +120,8 @@ public sealed class CreateManuscriptCommandHandler
             ManuscriptAccess.ApplyTransition(manuscript.Submit);
         }
 
-        _db.Manuscripts.Add(manuscript);
-        await _db.SaveChangesAsync(cancellationToken);
+        await _manuscripts.AddAsync(manuscript, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         if (request.SubmitForReview)
         {

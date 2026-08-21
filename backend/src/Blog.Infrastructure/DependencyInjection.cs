@@ -28,8 +28,11 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(sp =>
             sp.GetRequiredService<BlogDbContext>());
 
-        // Generic repository: IRepository<Manuscript>, IRepository<ResearchArea>, ...
+        // Generic repository: IRepository<ResearchArea>, IRepository<User>, ...
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IManuscriptRepository, ManuscriptRepository>();
+        services.AddScoped<IRepository<Manuscript>>(sp =>
+            sp.GetRequiredService<IManuscriptRepository>());
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));

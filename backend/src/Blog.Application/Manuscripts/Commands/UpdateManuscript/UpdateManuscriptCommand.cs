@@ -2,9 +2,9 @@ using Blog.Application.Common;
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Domain.Authorization;
+using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Manuscripts.Commands.UpdateManuscript;
 
@@ -54,24 +54,29 @@ public sealed class UpdateManuscriptCommandValidator : AbstractValidator<UpdateM
 
 public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManuscriptCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IManuscriptRepository _manuscripts;
+    private readonly IRepository<ResearchArea> _researchAreas;
+    private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
     private readonly INotificationService _notifications;
 
     public UpdateManuscriptCommandHandler(
-        IApplicationDbContext db,
+        IManuscriptRepository manuscripts,
+        IRepository<ResearchArea> researchAreas,
+        IUnitOfWork uow,
         ICurrentUser currentUser,
         INotificationService notifications)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _researchAreas = researchAreas;
+        _uow = uow;
         _currentUser = currentUser;
         _notifications = notifications;
     }
 
     public async Task Handle(UpdateManuscriptCommand request, CancellationToken cancellationToken)
     {
-        var manuscript = await _db.Manuscripts
-            .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
+        var manuscript = await _manuscripts.GetByIdAsync(request.Id, cancellationToken);
 
         if (manuscript is null)
         {
@@ -92,8 +97,7 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
 
         if (researchAreaId is int areaId)
         {
-            var areaExists = await _db.ResearchAreas
-                .AnyAsync(a => a.Id == areaId, cancellationToken);
+            var areaExists = await _researchAreas.ExistsAsync(areaId, cancellationToken);
 
             if (!areaExists)
             {
@@ -107,7 +111,7 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
         var slug = await SlugHelper.GenerateUniqueSlugAsync(
             slugSource,
             nameof(request.Title),
-            s => _db.Manuscripts.AnyAsync(m => m.Slug == s && m.Id != request.Id, cancellationToken),
+            s => _manuscripts.SlugExistsAsync(s, request.Id, cancellationToken),
             cancellationToken);
 
         manuscript.Title = title;
@@ -127,7 +131,7 @@ public sealed class UpdateManuscriptCommandHandler : IRequestHandler<UpdateManus
             ManuscriptAccess.ApplyTransition(manuscript.Submit);
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         if (request.SubmitForReview)
         {
