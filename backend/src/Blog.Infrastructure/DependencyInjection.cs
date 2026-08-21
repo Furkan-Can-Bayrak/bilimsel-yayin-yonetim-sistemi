@@ -5,6 +5,7 @@ using Blog.Infrastructure.Auth;
 using Blog.Infrastructure.Email;
 using Blog.Infrastructure.Notifications;
 using Blog.Infrastructure.Persistence;
+using Blog.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +27,10 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(sp =>
             sp.GetRequiredService<BlogDbContext>());
+
+        // Generic repository: IRepository<Manuscript>, IRepository<ResearchArea>, ...
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
