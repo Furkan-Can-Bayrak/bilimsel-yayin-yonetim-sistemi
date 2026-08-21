@@ -12,16 +12,38 @@
           formControlName="email"
           autocomplete="email"
           placeholder="ad.soyad@kurum.edu.tr"
+          [class.invalid]="showError('email')"
+          (input)="clearError('email')"
         />
       </label>
+      @if (showError('email')) {
+        <p class="field-error">
+          @if (form.controls.email.hasError('required')) {
+            E-posta zorunludur.
+          } @else {
+            Geçerli bir e-posta adresi girin.
+          }
+        </p>
+      }
 
       <label>
         Şifre
-        <input type="password" formControlName="password" autocomplete="current-password" />
+        <input
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          [class.invalid]="showError('password')"
+          (input)="clearError('password')"
+        />
       </label>
-
-      @if (form.controls.email.touched && form.controls.email.invalid) {
-        <p class="hint">Geçerli bir e-posta adresi girin.</p>
+      @if (showError('password')) {
+        <p class="field-error">
+          @if (form.controls.password.hasError('required')) {
+            Şifre zorunludur.
+          } @else {
+            Şifre en az 6 karakter olmalıdır.
+          }
+        </p>
       }
 
       @if (error()) {

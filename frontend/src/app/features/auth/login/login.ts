@@ -23,18 +23,43 @@ export class LoginPage {
     password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
+  private readonly highlighted = signal<ReadonlySet<string>>(new Set());
+
   constructor() {
     if (this.auth.isLoggedIn()) {
       void this.router.navigateByUrl(this.auth.pathAfterLogin());
     }
   }
 
+  showError(controlName: 'email' | 'password'): boolean {
+    return this.highlighted().has(controlName);
+  }
+
+  clearError(controlName: 'email' | 'password'): void {
+    if (!this.highlighted().has(controlName)) {
+      return;
+    }
+
+    const next = new Set(this.highlighted());
+    next.delete(controlName);
+    this.highlighted.set(next);
+  }
+
   submit(): void {
     if (this.form.invalid) {
+      const missing = new Set<string>();
+      if (this.form.controls.email.invalid) {
+        missing.add('email');
+      }
+      if (this.form.controls.password.invalid) {
+        missing.add('password');
+      }
+      this.highlighted.set(missing);
       this.form.markAllAsTouched();
       return;
     }
 
+    this.highlighted.set(new Set());
     this.submitting.set(true);
     this.error.set(null);
 
