@@ -1,3 +1,4 @@
+using Blog.Application.ResearchAreas.Dtos;
 using Blog.Domain.Entities;
 
 namespace Blog.Application.Common.Interfaces;
@@ -12,5 +13,12 @@ public interface IResearchAreaRepository : IRepository<ResearchArea>
 
     Task<ResearchArea?> GetBySlugAsync(
         string slug,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ResearchAreaDto>> ListWithManuscriptCountsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<ResearchAreaDto?> GetWithManuscriptCountAsync(
+        int id,
         CancellationToken cancellationToken = default);
 }

@@ -1,7 +1,6 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.ResearchAreas.Dtos;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.ResearchAreas.Queries.GetResearchAreaById;
 
@@ -10,25 +9,15 @@ public sealed record GetResearchAreaByIdQuery(int Id) : IRequest<ResearchAreaDto
 public sealed class GetResearchAreaByIdQueryHandler
     : IRequestHandler<GetResearchAreaByIdQuery, ResearchAreaDto?>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IResearchAreaRepository _researchAreas;
 
-    public GetResearchAreaByIdQueryHandler(IApplicationDbContext db)
+    public GetResearchAreaByIdQueryHandler(IResearchAreaRepository researchAreas)
     {
-        _db = db;
+        _researchAreas = researchAreas;
     }
 
-    public async Task<ResearchAreaDto?> Handle(
+    public Task<ResearchAreaDto?> Handle(
         GetResearchAreaByIdQuery request,
-        CancellationToken cancellationToken)
-    {
-        return await _db.ResearchAreas
-            .AsNoTracking()
-            .Where(a => a.Id == request.Id)
-            .Select(a => new ResearchAreaDto(
-                a.Id,
-                a.Name,
-                a.Slug,
-                a.Manuscripts.Count))
-            .FirstOrDefaultAsync(cancellationToken);
-    }
+        CancellationToken cancellationToken) =>
+        _researchAreas.GetWithManuscriptCountAsync(request.Id, cancellationToken);
 }
