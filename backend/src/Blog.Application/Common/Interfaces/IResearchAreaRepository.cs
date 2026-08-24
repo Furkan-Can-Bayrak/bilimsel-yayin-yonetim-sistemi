@@ -1,4 +1,4 @@
-using Blog.Application.ResearchAreas.Dtos;
+using Blog.Application.Common.Models;
 using Blog.Domain.Entities;
 
 namespace Blog.Application.Common.Interfaces;
@@ -15,10 +15,10 @@ public interface IResearchAreaRepository : IRepository<ResearchArea>
         string slug,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<ResearchAreaDto>> ListWithManuscriptCountsAsync(
+    Task<IReadOnlyList<ResearchAreaWithCount>> ListWithManuscriptCountsAsync(
         CancellationToken cancellationToken = default);
 
-    Task<ResearchAreaDto?> GetWithManuscriptCountAsync(
+    Task<ResearchAreaWithCount?> GetWithManuscriptCountAsync(
         int id,
         CancellationToken cancellationToken = default);
 }

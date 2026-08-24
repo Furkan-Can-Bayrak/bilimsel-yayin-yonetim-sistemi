@@ -16,8 +16,14 @@ public sealed class GetResearchAreasQueryHandler
         _researchAreas = researchAreas;
     }
 
-    public Task<IReadOnlyList<ResearchAreaDto>> Handle(
+    public async Task<IReadOnlyList<ResearchAreaDto>> Handle(
         GetResearchAreasQuery request,
-        CancellationToken cancellationToken) =>
-        _researchAreas.ListWithManuscriptCountsAsync(cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var rows = await _researchAreas.ListWithManuscriptCountsAsync(cancellationToken);
+
+        return rows
+            .Select(r => new ResearchAreaDto(r.Id, r.Name, r.Slug, r.ManuscriptCount))
+            .ToList();
+    }
 }

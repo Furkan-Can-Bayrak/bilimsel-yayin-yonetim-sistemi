@@ -16,8 +16,14 @@ public sealed class GetResearchAreaByIdQueryHandler
         _researchAreas = researchAreas;
     }
 
-    public Task<ResearchAreaDto?> Handle(
+    public async Task<ResearchAreaDto?> Handle(
         GetResearchAreaByIdQuery request,
-        CancellationToken cancellationToken) =>
-        _researchAreas.GetWithManuscriptCountAsync(request.Id, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var row = await _researchAreas.GetWithManuscriptCountAsync(request.Id, cancellationToken);
+
+        return row is null
+            ? null
+            : new ResearchAreaDto(row.Id, row.Name, row.Slug, row.ManuscriptCount);
+    }
 }

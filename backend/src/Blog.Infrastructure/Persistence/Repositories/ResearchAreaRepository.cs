@@ -1,5 +1,5 @@
 using Blog.Application.Common.Interfaces;
-using Blog.Application.ResearchAreas.Dtos;
+using Blog.Application.Common.Models;
 using Blog.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,12 +32,12 @@ public sealed class ResearchAreaRepository : Repository<ResearchArea>, IResearch
         CancellationToken cancellationToken = default) =>
         Set.FirstOrDefaultAsync(a => a.Slug == slug, cancellationToken);
 
-    public async Task<IReadOnlyList<ResearchAreaDto>> ListWithManuscriptCountsAsync(
+    public async Task<IReadOnlyList<ResearchAreaWithCount>> ListWithManuscriptCountsAsync(
         CancellationToken cancellationToken = default)
     {
         return await Set.AsNoTracking()
             .OrderBy(a => a.Name)
-            .Select(a => new ResearchAreaDto(
+            .Select(a => new ResearchAreaWithCount(
                 a.Id,
                 a.Name,
                 a.Slug,
@@ -45,12 +45,12 @@ public sealed class ResearchAreaRepository : Repository<ResearchArea>, IResearch
             .ToListAsync(cancellationToken);
     }
 
-    public Task<ResearchAreaDto?> GetWithManuscriptCountAsync(
+    public Task<ResearchAreaWithCount?> GetWithManuscriptCountAsync(
         int id,
         CancellationToken cancellationToken = default) =>
         Set.AsNoTracking()
             .Where(a => a.Id == id)
-            .Select(a => new ResearchAreaDto(
+            .Select(a => new ResearchAreaWithCount(
                 a.Id,
                 a.Name,
                 a.Slug,
