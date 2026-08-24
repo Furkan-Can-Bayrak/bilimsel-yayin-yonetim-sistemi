@@ -41,11 +41,6 @@ public class Repository<TEntity> : IRepository<TEntity>
         await Set.AddAsync(entity, cancellationToken);
     }
 
-    public virtual void Update(TEntity entity)
-    {
-        Set.Update(entity);
-    }
-
     public virtual void Remove(TEntity entity)
     {
         Set.Remove(entity);
