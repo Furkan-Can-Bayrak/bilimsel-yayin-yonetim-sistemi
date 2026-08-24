@@ -1,6 +1,7 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts;
+using Blog.Domain.Authorization;
 using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -22,14 +23,14 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
 {
     private readonly IManuscriptRepository _manuscripts;
     private readonly IReviewRepository _reviews;
-    private readonly IRepository<User> _users;
+    private readonly IUserRepository _users;
     private readonly IUnitOfWork _uow;
     private readonly INotificationService _notifications;
 
     public AssignReviewCommandHandler(
         IManuscriptRepository manuscripts,
         IReviewRepository reviews,
-        IRepository<User> users,
+        IUserRepository users,
         IUnitOfWork uow,
         INotificationService notifications)
     {
@@ -70,7 +71,10 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
             throw new NotFoundException($"Hakem bulunamadı: {request.ReviewerId}");
         }
 
-        var canReview = await _reviews.CanUserSubmitReviewsAsync(reviewer.Id, cancellationToken);
+        var canReview = await _users.HasPermissionAsync(
+            reviewer.Id,
+            Permissions.Reviews.Submit,
+            cancellationToken);
 
         if (!canReview)
         {

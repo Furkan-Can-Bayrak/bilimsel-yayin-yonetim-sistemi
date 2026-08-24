@@ -11,8 +11,4 @@ public interface IReviewRepository : IRepository<Review>
     Task<bool> HasOpenForManuscriptAsync(
         int manuscriptId,
         CancellationToken cancellationToken = default);
-
-    Task<bool> CanUserSubmitReviewsAsync(
-        int userId,
-        CancellationToken cancellationToken = default);
 }

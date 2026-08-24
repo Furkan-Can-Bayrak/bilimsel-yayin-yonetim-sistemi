@@ -7,7 +7,6 @@ using Blog.Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Users.Commands.CreateUser;
 
@@ -54,16 +53,25 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
 
 public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, CreateUserResult>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IUserRepository _users;
+    private readonly IRoleRepository _roles;
+    private readonly IRepository<Institution> _institutions;
+    private readonly IUnitOfWork _uow;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly IEmailService _email;
 
     public CreateUserCommandHandler(
-        IApplicationDbContext db,
+        IUserRepository users,
+        IRoleRepository roles,
+        IRepository<Institution> institutions,
+        IUnitOfWork uow,
         IPasswordHasher<User> passwordHasher,
         IEmailService email)
     {
-        _db = db;
+        _users = users;
+        _roles = roles;
+        _institutions = institutions;
+        _uow = uow;
         _passwordHasher = passwordHasher;
         _email = email;
     }
@@ -72,8 +80,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         CreateUserCommand request,
         CancellationToken cancellationToken)
     {
-        var institution = await _db.Institutions
-            .FirstOrDefaultAsync(i => i.Id == request.InstitutionId, cancellationToken);
+        var institution = await _institutions.GetByIdAsync(request.InstitutionId, cancellationToken);
 
         if (institution is null)
         {
@@ -86,8 +93,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         }
 
         var roleIds = request.RoleIds.Distinct().ToArray();
-        var existingRoleCount = await _db.Roles
-            .CountAsync(r => roleIds.Contains(r.Id), cancellationToken);
+        var existingRoleCount = await _roles.CountByIdsAsync(roleIds, cancellationToken);
 
         if (existingRoleCount != roleIds.Length)
         {
@@ -100,9 +106,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
 
         if (orcid is not null)
         {
-            var orcidTaken = await _db.Users
-                .IgnoreQueryFilters()
-                .AnyAsync(u => u.Orcid == orcid, cancellationToken);
+            var orcidTaken = await _users.OrcidExistsAsync(orcid, cancellationToken);
 
             if (orcidTaken)
             {
@@ -117,9 +121,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
                 request.FirstName,
                 request.LastName,
                 institution.EmailDomain,
-                candidate => _db.Users
-                    .IgnoreQueryFilters()
-                    .AnyAsync(u => u.Email == candidate, cancellationToken),
+                candidate => _users.EmailExistsAsync(candidate, cancellationToken),
                 cancellationToken);
         }
         catch (ArgumentException ex)
@@ -148,8 +150,8 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
             user.UserRoles.Add(new UserRole { RoleId = roleId });
         }
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync(cancellationToken);
+        await _users.AddAsync(user, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         await _email.SendAsync(
             email,

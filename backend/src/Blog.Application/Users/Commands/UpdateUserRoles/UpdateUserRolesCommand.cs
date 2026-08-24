@@ -3,7 +3,6 @@ using Blog.Application.Common.Interfaces;
 using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Users.Commands.UpdateUserRoles;
 
@@ -23,18 +22,23 @@ public sealed class UpdateUserRolesCommandValidator : AbstractValidator<UpdateUs
 
 public sealed class UpdateUserRolesCommandHandler : IRequestHandler<UpdateUserRolesCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IUserRepository _users;
+    private readonly IRoleRepository _roles;
+    private readonly IUnitOfWork _uow;
 
-    public UpdateUserRolesCommandHandler(IApplicationDbContext db)
+    public UpdateUserRolesCommandHandler(
+        IUserRepository users,
+        IRoleRepository roles,
+        IUnitOfWork uow)
     {
-        _db = db;
+        _users = users;
+        _roles = roles;
+        _uow = uow;
     }
 
     public async Task Handle(UpdateUserRolesCommand request, CancellationToken cancellationToken)
     {
-        var user = await _db.Users
-            .Include(u => u.UserRoles)
-            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+        var user = await _users.GetByIdWithRolesAsync(request.UserId, cancellationToken);
 
         if (user is null)
         {
@@ -42,8 +46,7 @@ public sealed class UpdateUserRolesCommandHandler : IRequestHandler<UpdateUserRo
         }
 
         var roleIds = request.RoleIds.Distinct().ToArray();
-        var existingRoleCount = await _db.Roles
-            .CountAsync(r => roleIds.Contains(r.Id), cancellationToken);
+        var existingRoleCount = await _roles.CountByIdsAsync(roleIds, cancellationToken);
 
         if (existingRoleCount != roleIds.Length)
         {
@@ -68,6 +71,6 @@ public sealed class UpdateUserRolesCommandHandler : IRequestHandler<UpdateUserRo
         }
 
         user.SecurityVersion += 1;
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,5 +1,4 @@
 using Blog.Application.Common.Interfaces;
-using Blog.Domain.Authorization;
 using Blog.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,15 +23,4 @@ public sealed class ReviewRepository : Repository<Review>, IReviewRepository
         Set.AnyAsync(
             r => r.ManuscriptId == manuscriptId && r.SubmittedAtUtc == null,
             cancellationToken);
-
-    public Task<bool> CanUserSubmitReviewsAsync(
-        int userId,
-        CancellationToken cancellationToken = default) =>
-        Db.Users
-            .Where(u => u.Id == userId)
-            .AnyAsync(
-                u => u.UserRoles.Any(ur =>
-                    ur.Role.RolePermissions.Any(rp =>
-                        rp.Permission.Code == Permissions.Reviews.Submit)),
-                cancellationToken);
 }

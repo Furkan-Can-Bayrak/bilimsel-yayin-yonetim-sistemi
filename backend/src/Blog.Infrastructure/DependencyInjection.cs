@@ -42,6 +42,10 @@ public static class DependencyInjection
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IRepository<Review>>(sp =>
             sp.GetRequiredService<IReviewRepository>());
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRepository<User>>(sp =>
+            sp.GetRequiredService<IUserRepository>());
+        services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
