@@ -2,7 +2,6 @@ using Blog.Application.Common.Interfaces;
 using Blog.Application.Common.Models;
 using Blog.Application.Users.Dtos;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Users.Queries.GetUsers;
 
@@ -14,11 +13,11 @@ public sealed class GetUsersQueryHandler
     : IRequestHandler<GetUsersQuery, PagedResult<UserListItemDto>>
 {
     private const int MaxPageSize = 50;
-    private readonly IApplicationDbContext _db;
+    private readonly IUserRepository _users;
 
-    public GetUsersQueryHandler(IApplicationDbContext db)
+    public GetUsersQueryHandler(IUserRepository users)
     {
-        _db = db;
+        _users = users;
     }
 
     public async Task<PagedResult<UserListItemDto>> Handle(
@@ -30,39 +29,28 @@ public sealed class GetUsersQueryHandler
             ? 10
             : Math.Min(request.PageSize, MaxPageSize);
 
-        var query = _db.Users.AsNoTracking();
+        var (users, totalCount) = await _users.ListPagedWithRolesAsync(
+            page,
+            pageSize,
+            cancellationToken);
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var items = users.Select(u =>
+        {
+            var roles = u.UserRoles
+                .Where(ur => ur.Role is not null)
+                .OrderBy(ur => ur.Role!.Name)
+                .ToList();
 
-        var rows = await query
-            .OrderBy(u => u.LastName)
-            .ThenBy(u => u.FirstName)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(u => new
-            {
+            return new UserListItemDto(
                 u.Id,
                 u.Email,
                 u.FirstName,
                 u.LastName,
                 u.AcademicTitle,
                 u.IsActive,
-                Roles = u.UserRoles
-                    .OrderBy(ur => ur.Role!.Name)
-                    .Select(ur => new { ur.RoleId, Name = ur.Role!.Name })
-                    .ToList()
-            })
-            .ToListAsync(cancellationToken);
-
-        var items = rows.ConvertAll(u => new UserListItemDto(
-            u.Id,
-            u.Email,
-            u.FirstName,
-            u.LastName,
-            u.AcademicTitle,
-            u.IsActive,
-            u.Roles.ConvertAll(r => r.RoleId),
-            u.Roles.ConvertAll(r => r.Name)));
+                roles.Select(r => r.RoleId).ToList(),
+                roles.Select(r => r.Role!.Name).ToList());
+        }).ToList();
 
         return new PagedResult<UserListItemDto>(items, page, pageSize, totalCount);
     }

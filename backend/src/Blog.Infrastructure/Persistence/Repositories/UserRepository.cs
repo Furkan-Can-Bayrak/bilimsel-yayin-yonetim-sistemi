@@ -70,4 +70,23 @@ public sealed class UserRepository : Repository<User>, IUserRepository
             .Select(p => p.Code)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<(IReadOnlyList<User> Items, int TotalCount)> ListPagedWithRolesAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var totalCount = await Set.CountAsync(cancellationToken);
+
+        var items = await Set.AsNoTracking()
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .OrderBy(u => u.LastName)
+            .ThenBy(u => u.FirstName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
 }

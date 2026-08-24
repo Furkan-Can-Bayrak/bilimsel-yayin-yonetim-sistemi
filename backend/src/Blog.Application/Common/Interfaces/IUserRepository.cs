@@ -32,4 +32,9 @@ public interface IUserRepository : IRepository<User>
     Task<IReadOnlyList<string>> GetPermissionCodesAsync(
         int userId,
         CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<User> Items, int TotalCount)> ListPagedWithRolesAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 }
