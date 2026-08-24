@@ -25,9 +25,6 @@ public static class DependencyInjection
         services.AddDbContext<BlogDbContext>(options =>
             options.UseSqlServer(connectionString));
 
-        services.AddScoped<IApplicationDbContext>(sp =>
-            sp.GetRequiredService<BlogDbContext>());
-
         // Generic repository + entity-specific overrides (Manuscript, ResearchArea)
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IManuscriptRepository, ManuscriptRepository>();

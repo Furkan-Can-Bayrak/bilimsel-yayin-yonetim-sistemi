@@ -1,11 +1,10 @@
-using Blog.Application.Common.Interfaces;
 using Blog.Domain.Common;
 using Blog.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Infrastructure.Persistence;
 
-public class BlogDbContext : DbContext, IApplicationDbContext
+public class BlogDbContext : DbContext
 {
     public BlogDbContext(DbContextOptions<BlogDbContext> options)
         : base(options)
