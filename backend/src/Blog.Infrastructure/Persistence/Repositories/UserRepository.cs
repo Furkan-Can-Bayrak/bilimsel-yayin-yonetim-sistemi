@@ -41,4 +41,33 @@ public sealed class UserRepository : Repository<User>, IUserRepository
                         rp.Permission != null &&
                         rp.Permission.Code == permissionCode)),
                 cancellationToken);
+
+    public Task<User?> GetByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default) =>
+        Set.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+
+    public async Task<IReadOnlyList<string>> GetRoleNamesAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await Db.Roles
+            .Where(r => r.UserRoles.Any(ur => ur.UserId == userId))
+            .OrderBy(r => r.Name)
+            .Select(r => r.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> GetPermissionCodesAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await Db.Permissions
+            .Where(p => p.RolePermissions.Any(rp =>
+                rp.Role != null &&
+                rp.Role.UserRoles.Any(ur => ur.UserId == userId)))
+            .OrderBy(p => p.Code)
+            .Select(p => p.Code)
+            .ToListAsync(cancellationToken);
+    }
 }

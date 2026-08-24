@@ -4,7 +4,6 @@ using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Auth.Commands.Login;
 
@@ -33,16 +32,16 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
 {
     private const string InvalidCredentials = "E-posta veya şifre hatalı.";
 
-    private readonly IApplicationDbContext _db;
+    private readonly IUserRepository _users;
     private readonly IJwtTokenService _jwt;
     private readonly IPasswordHasher<User> _passwordHasher;
 
     public LoginCommandHandler(
-        IApplicationDbContext db,
+        IUserRepository users,
         IJwtTokenService jwt,
         IPasswordHasher<User> passwordHasher)
     {
-        _db = db;
+        _users = users;
         _jwt = jwt;
         _passwordHasher = passwordHasher;
     }
@@ -52,8 +51,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
         var email = request.Email.Trim().ToLowerInvariant();
 
         // Silinmiş kullanıcılar query filter sayesinde sorguya hiç girmez.
-        var user = await _db.Users
-            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        var user = await _users.GetByEmailAsync(email, cancellationToken);
 
         if (user is null)
         {
@@ -73,23 +71,9 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
             throw new UnauthorizedException("Hesabınız devre dışı bırakılmış. Lütfen editör ile iletişime geçin.");
         }
 
-        // Roles üzerinden başlıyoruz: silinmiş roller query filter ile kendiliğinden düşer,
-        // böylece soft delete kuralını burada tekrar yazmak gerekmiyor.
-        var roles = await _db.Roles
-            .Where(r => r.UserRoles.Any(ur => ur.UserId == user.Id))
-            .OrderBy(r => r.Name)
-            .Select(r => new { r.Id, r.Name })
-            .ToListAsync(cancellationToken);
-
-        var roleIds = roles.Select(r => r.Id).ToList();
-
-        var permissions = await _db.Permissions
-            .Where(p => p.RolePermissions.Any(rp => roleIds.Contains(rp.RoleId)))
-            .OrderBy(p => p.Code)
-            .Select(p => p.Code)
-            .ToListAsync(cancellationToken);
-
-        var roleNames = roles.Select(r => r.Name).ToArray();
+        // Silinmiş roller query filter ile düşer; kuralı burada tekrar yazmıyoruz.
+        var roleNames = await _users.GetRoleNamesAsync(user.Id, cancellationToken);
+        var permissions = await _users.GetPermissionCodesAsync(user.Id, cancellationToken);
 
         var token = _jwt.CreateToken(user, roleNames, permissions);
 

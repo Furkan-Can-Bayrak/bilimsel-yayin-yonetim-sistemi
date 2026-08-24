@@ -20,4 +20,16 @@ public interface IUserRepository : IRepository<User>
         int userId,
         string permissionCode,
         CancellationToken cancellationToken = default);
+
+    Task<User?> GetByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<string>> GetRoleNamesAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<string>> GetPermissionCodesAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
 }
