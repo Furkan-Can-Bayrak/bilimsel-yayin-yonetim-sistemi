@@ -1,7 +1,6 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Notifications.Commands.MarkNotificationRead;
 
@@ -9,12 +8,17 @@ public sealed record MarkNotificationReadCommand(int Id) : IRequest;
 
 public sealed class MarkNotificationReadCommandHandler : IRequestHandler<MarkNotificationReadCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly INotificationRepository _notifications;
+    private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
 
-    public MarkNotificationReadCommandHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public MarkNotificationReadCommandHandler(
+        INotificationRepository notifications,
+        IUnitOfWork uow,
+        ICurrentUser currentUser)
     {
-        _db = db;
+        _notifications = notifications;
+        _uow = uow;
         _currentUser = currentUser;
     }
 
@@ -22,8 +26,10 @@ public sealed class MarkNotificationReadCommandHandler : IRequestHandler<MarkNot
     {
         var userId = _currentUser.RequireUserId();
 
-        var notification = await _db.Notifications
-            .FirstOrDefaultAsync(n => n.Id == request.Id && n.UserId == userId, cancellationToken);
+        var notification = await _notifications.GetByIdForUserAsync(
+            request.Id,
+            userId,
+            cancellationToken);
 
         if (notification is null)
         {
@@ -31,6 +37,6 @@ public sealed class MarkNotificationReadCommandHandler : IRequestHandler<MarkNot
         }
 
         notification.IsRead = true;
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

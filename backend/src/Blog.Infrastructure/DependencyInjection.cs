@@ -36,6 +36,9 @@ public static class DependencyInjection
         services.AddScoped<IResearchAreaRepository, ResearchAreaRepository>();
         services.AddScoped<IRepository<ResearchArea>>(sp =>
             sp.GetRequiredService<IResearchAreaRepository>());
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IRepository<Notification>>(sp =>
+            sp.GetRequiredService<INotificationRepository>());
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
