@@ -4,7 +4,6 @@ using Blog.Application.Manuscripts.Dtos;
 using Blog.Domain.Authorization;
 using Blog.Domain.Enums;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Reviews.Queries.GetReviewById;
 
@@ -24,66 +23,23 @@ public sealed record GetReviewByIdQuery(int Id) : IRequest<ReviewDetailDto?>;
 
 public sealed class GetReviewByIdQueryHandler : IRequestHandler<GetReviewByIdQuery, ReviewDetailDto?>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IReviewRepository _reviews;
     private readonly ICurrentUser _currentUser;
 
-    public GetReviewByIdQueryHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public GetReviewByIdQueryHandler(IReviewRepository reviews, ICurrentUser currentUser)
     {
-        _db = db;
+        _reviews = reviews;
         _currentUser = currentUser;
     }
 
     public async Task<ReviewDetailDto?> Handle(GetReviewByIdQuery request, CancellationToken cancellationToken)
     {
-        var row = await _db.Reviews
-            .AsNoTracking()
-            .Where(r => r.Id == request.Id)
-            .Select(r => new
-            {
-                r.Id,
-                r.ManuscriptId,
-                ManuscriptTitle = r.Manuscript != null ? r.Manuscript.Title : string.Empty,
-                ManuscriptContent = r.Manuscript != null ? r.Manuscript.Content : string.Empty,
-                ManuscriptSummary = r.Manuscript != null ? r.Manuscript.Summary : null,
-                r.ReviewerId,
-                ReviewerTitle = r.Reviewer == null ? AcademicTitle.Dr : r.Reviewer.AcademicTitle,
-                ReviewerFirstName = r.Reviewer == null ? string.Empty : r.Reviewer.FirstName,
-                ReviewerLastName = r.Reviewer == null ? string.Empty : r.Reviewer.LastName,
-                r.AssignedAtUtc,
-                r.SubmittedAtUtc,
-                r.Recommendation,
-                r.Comments
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+        var review = await _reviews.GetByIdWithManuscriptAndReviewerAsync(request.Id, cancellationToken);
 
-        if (row is null)
+        if (review is null)
         {
             return null;
         }
-
-        var reviewerName = AcademicTitles.FormatName(
-            row.ReviewerTitle,
-            row.ReviewerFirstName,
-            row.ReviewerLastName);
-
-        var review = new ReviewDetailDto(
-            row.Id,
-            row.ManuscriptId,
-            row.ManuscriptTitle,
-            row.ManuscriptContent,
-            row.ManuscriptSummary,
-            row.ReviewerId,
-            reviewerName,
-            row.AssignedAtUtc,
-            row.SubmittedAtUtc,
-            new ReviewSummaryDto(
-                row.Id,
-                row.ReviewerId,
-                reviewerName,
-                row.AssignedAtUtc,
-                row.SubmittedAtUtc,
-                row.Recommendation,
-                row.Comments));
 
         var canSee = _currentUser.HasPermission(Permissions.Reviews.ViewAll)
             || _currentUser.UserId == review.ReviewerId;
@@ -93,6 +49,30 @@ public sealed class GetReviewByIdQueryHandler : IRequestHandler<GetReviewByIdQue
             throw new ForbiddenException("Bu değerlendirmeyi görme yetkiniz yok.");
         }
 
-        return review;
+        var reviewerName = review.Reviewer is null
+            ? string.Empty
+            : AcademicTitles.FormatName(
+                review.Reviewer.AcademicTitle,
+                review.Reviewer.FirstName,
+                review.Reviewer.LastName);
+
+        return new ReviewDetailDto(
+            review.Id,
+            review.ManuscriptId,
+            review.Manuscript?.Title ?? string.Empty,
+            review.Manuscript?.Content ?? string.Empty,
+            review.Manuscript?.Summary,
+            review.ReviewerId,
+            reviewerName,
+            review.AssignedAtUtc,
+            review.SubmittedAtUtc,
+            new ReviewSummaryDto(
+                review.Id,
+                review.ReviewerId,
+                reviewerName,
+                review.AssignedAtUtc,
+                review.SubmittedAtUtc,
+                review.Recommendation,
+                review.Comments));
     }
 }

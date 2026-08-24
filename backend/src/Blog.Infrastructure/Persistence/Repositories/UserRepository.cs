@@ -89,4 +89,21 @@ public sealed class UserRepository : Repository<User>, IUserRepository
 
         return (items, totalCount);
     }
+
+    public async Task<IReadOnlyList<User>> ListActiveByPermissionAsync(
+        string permissionCode,
+        int excludeUserId,
+        CancellationToken cancellationToken = default)
+    {
+        return await Set.AsNoTracking()
+            .Where(u => u.IsActive && u.Id != excludeUserId)
+            .Where(u => u.UserRoles.Any(ur =>
+                ur.Role != null &&
+                ur.Role.RolePermissions.Any(rp =>
+                    rp.Permission != null &&
+                    rp.Permission.Code == permissionCode)))
+            .OrderBy(u => u.LastName)
+            .ThenBy(u => u.FirstName)
+            .ToListAsync(cancellationToken);
+    }
 }

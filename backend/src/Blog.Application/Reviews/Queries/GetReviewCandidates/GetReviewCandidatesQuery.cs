@@ -1,7 +1,6 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Domain.Authorization;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Reviews.Queries.GetReviewCandidates;
 
@@ -12,35 +11,35 @@ public sealed record GetReviewCandidatesQuery(int ManuscriptId) : IRequest<IRead
 public sealed class GetReviewCandidatesQueryHandler
     : IRequestHandler<GetReviewCandidatesQuery, IReadOnlyList<ReviewerCandidateDto>>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IManuscriptRepository _manuscripts;
+    private readonly IUserRepository _users;
 
-    public GetReviewCandidatesQueryHandler(IApplicationDbContext db)
+    public GetReviewCandidatesQueryHandler(
+        IManuscriptRepository manuscripts,
+        IUserRepository users)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _users = users;
     }
 
     public async Task<IReadOnlyList<ReviewerCandidateDto>> Handle(
         GetReviewCandidatesQuery request,
         CancellationToken cancellationToken)
     {
-        var authorId = await _db.Manuscripts
-            .Where(m => m.Id == request.ManuscriptId)
-            .Select(m => (int?)m.AuthorId)
-            .FirstOrDefaultAsync(cancellationToken);
+        var manuscript = await _manuscripts.GetByIdAsync(request.ManuscriptId, cancellationToken);
 
-        if (authorId is null)
+        if (manuscript is null)
         {
             return [];
         }
 
-        return await _db.Users
-            .AsNoTracking()
-            .Where(u => u.IsActive && u.Id != authorId)
-            .Where(u => u.UserRoles.Any(ur =>
-                ur.Role.RolePermissions.Any(rp => rp.Permission.Code == Permissions.Reviews.Submit)))
-            .OrderBy(u => u.LastName)
-            .ThenBy(u => u.FirstName)
+        var candidates = await _users.ListActiveByPermissionAsync(
+            Permissions.Reviews.Submit,
+            manuscript.AuthorId,
+            cancellationToken);
+
+        return candidates
             .Select(u => new ReviewerCandidateDto(u.Id, u.FirstName, u.LastName, u.Email))
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 }

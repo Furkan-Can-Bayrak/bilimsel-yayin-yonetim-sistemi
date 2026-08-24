@@ -37,4 +37,9 @@ public interface IUserRepository : IRepository<User>
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<User>> ListActiveByPermissionAsync(
+        string permissionCode,
+        int excludeUserId,
+        CancellationToken cancellationToken = default);
 }

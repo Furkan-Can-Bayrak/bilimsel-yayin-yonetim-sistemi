@@ -1,7 +1,6 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Domain.Enums;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Reviews.Queries.GetMyReviews;
 
@@ -19,12 +18,12 @@ public sealed record GetMyReviewsQuery : IRequest<IReadOnlyList<MyReviewListItem
 public sealed class GetMyReviewsQueryHandler
     : IRequestHandler<GetMyReviewsQuery, IReadOnlyList<MyReviewListItemDto>>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IReviewRepository _reviews;
     private readonly ICurrentUser _currentUser;
 
-    public GetMyReviewsQueryHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public GetMyReviewsQueryHandler(IReviewRepository reviews, ICurrentUser currentUser)
     {
-        _db = db;
+        _reviews = reviews;
         _currentUser = currentUser;
     }
 
@@ -33,19 +32,17 @@ public sealed class GetMyReviewsQueryHandler
         CancellationToken cancellationToken)
     {
         var reviewerId = _currentUser.RequireUserId();
+        var reviews = await _reviews.ListByReviewerAsync(reviewerId, cancellationToken);
 
-        return await _db.Reviews
-            .AsNoTracking()
-            .Where(r => r.ReviewerId == reviewerId)
-            .OrderByDescending(r => r.AssignedAtUtc)
+        return reviews
             .Select(r => new MyReviewListItemDto(
                 r.Id,
                 r.ManuscriptId,
-                r.Manuscript != null ? r.Manuscript.Title : string.Empty,
-                r.Manuscript != null ? r.Manuscript.Status : ManuscriptStatus.Draft,
+                r.Manuscript?.Title ?? string.Empty,
+                r.Manuscript?.Status ?? ManuscriptStatus.Draft,
                 r.AssignedAtUtc,
                 r.SubmittedAtUtc,
                 r.Recommendation))
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 }

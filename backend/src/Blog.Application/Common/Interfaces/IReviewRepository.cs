@@ -11,4 +11,12 @@ public interface IReviewRepository : IRepository<Review>
     Task<bool> HasOpenForManuscriptAsync(
         int manuscriptId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Review>> ListByReviewerAsync(
+        int reviewerId,
+        CancellationToken cancellationToken = default);
+
+    Task<Review?> GetByIdWithManuscriptAndReviewerAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 }
