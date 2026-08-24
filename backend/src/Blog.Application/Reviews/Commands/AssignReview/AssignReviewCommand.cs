@@ -1,11 +1,9 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts;
-using Blog.Domain.Authorization;
 using Blog.Domain.Entities;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Reviews.Commands.AssignReview;
 
@@ -22,19 +20,29 @@ public sealed class AssignReviewCommandValidator : AbstractValidator<AssignRevie
 
 public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCommand, int>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IManuscriptRepository _manuscripts;
+    private readonly IReviewRepository _reviews;
+    private readonly IRepository<User> _users;
+    private readonly IUnitOfWork _uow;
     private readonly INotificationService _notifications;
 
-    public AssignReviewCommandHandler(IApplicationDbContext db, INotificationService notifications)
+    public AssignReviewCommandHandler(
+        IManuscriptRepository manuscripts,
+        IReviewRepository reviews,
+        IRepository<User> users,
+        IUnitOfWork uow,
+        INotificationService notifications)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _reviews = reviews;
+        _users = users;
+        _uow = uow;
         _notifications = notifications;
     }
 
     public async Task<int> Handle(AssignReviewCommand request, CancellationToken cancellationToken)
     {
-        var manuscript = await _db.Manuscripts
-            .FirstOrDefaultAsync(m => m.Id == request.ManuscriptId, cancellationToken);
+        var manuscript = await _manuscripts.GetByIdAsync(request.ManuscriptId, cancellationToken);
 
         if (manuscript is null)
         {
@@ -46,8 +54,8 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
             throw new ConflictException("Makalenin yazarı hakem olarak atanamaz.");
         }
 
-        var hasOpenReview = await _db.Reviews.AnyAsync(
-            r => r.ManuscriptId == manuscript.Id && r.SubmittedAtUtc == null,
+        var hasOpenReview = await _reviews.HasOpenForManuscriptAsync(
+            manuscript.Id,
             cancellationToken);
 
         if (hasOpenReview)
@@ -55,22 +63,14 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
             throw new ConflictException("Bu makalede zaten açık bir hakem ataması var.");
         }
 
-        var reviewer = await _db.Users
-            .Where(u => u.Id == request.ReviewerId && u.IsActive)
-            .Select(u => new { u.Id })
-            .FirstOrDefaultAsync(cancellationToken);
+        var reviewer = await _users.GetByIdAsync(request.ReviewerId, cancellationToken);
 
-        if (reviewer is null)
+        if (reviewer is null || !reviewer.IsActive)
         {
             throw new NotFoundException($"Hakem bulunamadı: {request.ReviewerId}");
         }
 
-        var canReview = await _db.Users
-            .Where(u => u.Id == request.ReviewerId)
-            .AnyAsync(
-                u => u.UserRoles.Any(ur =>
-                    ur.Role.RolePermissions.Any(rp => rp.Permission.Code == Permissions.Reviews.Submit)),
-                cancellationToken);
+        var canReview = await _reviews.CanUserSubmitReviewsAsync(reviewer.Id, cancellationToken);
 
         if (!canReview)
         {
@@ -86,8 +86,8 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
             AssignedAtUtc = DateTime.UtcNow
         };
 
-        _db.Reviews.Add(review);
-        await _db.SaveChangesAsync(cancellationToken);
+        await _reviews.AddAsync(review, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         await _notifications.NotifyUsersAsync(
             [reviewer.Id],

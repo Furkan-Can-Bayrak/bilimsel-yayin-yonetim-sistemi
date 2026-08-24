@@ -5,7 +5,6 @@ using Blog.Domain.Authorization;
 using Blog.Domain.Enums;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Reviews.Commands.SubmitReview;
 
@@ -26,25 +25,26 @@ public sealed class SubmitReviewCommandValidator : AbstractValidator<SubmitRevie
 
 public sealed class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IReviewRepository _reviews;
+    private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
     private readonly INotificationService _notifications;
 
     public SubmitReviewCommandHandler(
-        IApplicationDbContext db,
+        IReviewRepository reviews,
+        IUnitOfWork uow,
         ICurrentUser currentUser,
         INotificationService notifications)
     {
-        _db = db;
+        _reviews = reviews;
+        _uow = uow;
         _currentUser = currentUser;
         _notifications = notifications;
     }
 
     public async Task Handle(SubmitReviewCommand request, CancellationToken cancellationToken)
     {
-        var review = await _db.Reviews
-            .Include(r => r.Manuscript)
-            .FirstOrDefaultAsync(r => r.Id == request.ReviewId, cancellationToken);
+        var review = await _reviews.GetByIdWithManuscriptAsync(request.ReviewId, cancellationToken);
 
         if (review is null)
         {
@@ -59,7 +59,7 @@ public sealed class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCom
         ManuscriptAccess.ApplyTransition(
             () => review.SubmitReport(request.Recommendation, request.Comments, DateTime.UtcNow));
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         var title = review.Manuscript?.Title ?? "Makale";
         await _notifications.NotifyUsersWithPermissionAsync(
