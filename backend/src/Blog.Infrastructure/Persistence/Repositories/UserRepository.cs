@@ -106,4 +106,25 @@ public sealed class UserRepository : Repository<User>, IUserRepository
             .ThenBy(u => u.FirstName)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<int>> ListActiveIdsByPermissionAsync(
+        string permissionCode,
+        int? excludeUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var query = Set.AsNoTracking()
+            .Where(u => u.IsActive)
+            .Where(u => u.UserRoles.Any(ur =>
+                ur.Role != null &&
+                ur.Role.RolePermissions.Any(rp =>
+                    rp.Permission != null &&
+                    rp.Permission.Code == permissionCode)));
+
+        if (excludeUserId is int excluded)
+        {
+            query = query.Where(u => u.Id != excluded);
+        }
+
+        return await query.Select(u => u.Id).ToListAsync(cancellationToken);
+    }
 }

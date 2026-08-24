@@ -1,16 +1,22 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Infrastructure.Notifications;
 
 public sealed class NotificationService : INotificationService
 {
-    private readonly IApplicationDbContext _db;
+    private readonly INotificationRepository _notifications;
+    private readonly IUserRepository _users;
+    private readonly IUnitOfWork _uow;
 
-    public NotificationService(IApplicationDbContext db)
+    public NotificationService(
+        INotificationRepository notifications,
+        IUserRepository users,
+        IUnitOfWork uow)
     {
-        _db = db;
+        _notifications = notifications;
+        _users = users;
+        _uow = uow;
     }
 
     public async Task NotifyUsersAsync(
@@ -30,18 +36,20 @@ public sealed class NotificationService : INotificationService
 
         foreach (var userId in distinctIds)
         {
-            _db.Notifications.Add(new Notification
-            {
-                UserId = userId,
-                Title = title,
-                Message = message,
-                RelatedManuscriptId = relatedManuscriptId,
-                CreatedAtUtc = createdAtUtc,
-                IsRead = false
-            });
+            await _notifications.AddAsync(
+                new Notification
+                {
+                    UserId = userId,
+                    Title = title,
+                    Message = message,
+                    RelatedManuscriptId = relatedManuscriptId,
+                    CreatedAtUtc = createdAtUtc,
+                    IsRead = false
+                },
+                cancellationToken);
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 
     public async Task NotifyUsersWithPermissionAsync(
@@ -52,22 +60,10 @@ public sealed class NotificationService : INotificationService
         int? excludeUserId = null,
         CancellationToken cancellationToken = default)
     {
-        var query = _db.Users
-            .AsNoTracking()
-            .Where(u => u.IsActive)
-            .Where(u => u.UserRoles.Any(ur =>
-                ur.Role != null &&
-                ur.Role.RolePermissions.Any(rp =>
-                    rp.Permission != null && rp.Permission.Code == permissionCode)));
-
-        if (excludeUserId is int excluded)
-        {
-            query = query.Where(u => u.Id != excluded);
-        }
-
-        var userIds = await query
-            .Select(u => u.Id)
-            .ToListAsync(cancellationToken);
+        var userIds = await _users.ListActiveIdsByPermissionAsync(
+            permissionCode,
+            excludeUserId,
+            cancellationToken);
 
         await NotifyUsersAsync(userIds, title, message, relatedManuscriptId, cancellationToken);
     }

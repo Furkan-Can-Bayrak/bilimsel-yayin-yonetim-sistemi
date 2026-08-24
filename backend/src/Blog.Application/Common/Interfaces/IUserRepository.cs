@@ -42,4 +42,9 @@ public interface IUserRepository : IRepository<User>
         string permissionCode,
         int excludeUserId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<int>> ListActiveIdsByPermissionAsync(
+        string permissionCode,
+        int? excludeUserId,
+        CancellationToken cancellationToken = default);
 }
