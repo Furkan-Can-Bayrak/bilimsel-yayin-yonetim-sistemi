@@ -17,4 +17,13 @@ public sealed class RoleRepository : IRoleRepository
         IReadOnlyCollection<int> ids,
         CancellationToken cancellationToken = default) =>
         _db.Roles.CountAsync(r => ids.Contains(r.Id), cancellationToken);
+
+    public async Task<IReadOnlyList<Role>> ListOrderedByNameAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _db.Roles
+            .AsNoTracking()
+            .OrderBy(r => r.Name)
+            .ToListAsync(cancellationToken);
+    }
 }

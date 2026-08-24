@@ -1,7 +1,6 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Institutions.Dtos;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Institutions.Queries.GetInstitutions;
 
@@ -10,21 +9,21 @@ public sealed record GetInstitutionsQuery : IRequest<IReadOnlyList<InstitutionLi
 public sealed class GetInstitutionsQueryHandler
     : IRequestHandler<GetInstitutionsQuery, IReadOnlyList<InstitutionListItemDto>>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IInstitutionRepository _institutions;
 
-    public GetInstitutionsQueryHandler(IApplicationDbContext db)
+    public GetInstitutionsQueryHandler(IInstitutionRepository institutions)
     {
-        _db = db;
+        _institutions = institutions;
     }
 
     public async Task<IReadOnlyList<InstitutionListItemDto>> Handle(
         GetInstitutionsQuery request,
         CancellationToken cancellationToken)
     {
-        return await _db.Institutions
-            .AsNoTracking()
-            .OrderBy(i => i.Name)
+        var institutions = await _institutions.ListOrderedByNameAsync(cancellationToken);
+
+        return institutions
             .Select(i => new InstitutionListItemDto(i.Id, i.Name, i.EmailDomain))
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 }
