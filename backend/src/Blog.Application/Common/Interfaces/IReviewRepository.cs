@@ -19,4 +19,9 @@ public interface IReviewRepository : IRepository<Review>
     Task<Review?> GetByIdWithManuscriptAndReviewerAsync(
         int id,
         CancellationToken cancellationToken = default);
+
+    Task<bool> ExistsForManuscriptAndReviewerAsync(
+        int manuscriptId,
+        int reviewerId,
+        CancellationToken cancellationToken = default);
 }

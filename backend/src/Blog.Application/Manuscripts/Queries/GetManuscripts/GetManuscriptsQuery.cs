@@ -1,9 +1,9 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Common.Models;
 using Blog.Application.Manuscripts.Dtos;
+using Blog.Domain.Entities;
 using Blog.Domain.Enums;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Manuscripts.Queries.GetManuscripts;
 
@@ -17,11 +17,11 @@ public sealed class GetManuscriptsQueryHandler
     : IRequestHandler<GetManuscriptsQuery, PagedResult<ManuscriptListItemDto>>
 {
     private const int MaxPageSize = 50;
-    private readonly IApplicationDbContext _db;
+    private readonly IManuscriptRepository _manuscripts;
 
-    public GetManuscriptsQueryHandler(IApplicationDbContext db)
+    public GetManuscriptsQueryHandler(IManuscriptRepository manuscripts)
     {
-        _db = db;
+        _manuscripts = manuscripts;
     }
 
     public async Task<PagedResult<ManuscriptListItemDto>> Handle(
@@ -33,52 +33,27 @@ public sealed class GetManuscriptsQueryHandler
             ? 10
             : Math.Min(request.PageSize, MaxPageSize);
 
-        var query = _db.Manuscripts
-            .AsNoTracking()
-            .Where(m => m.Status == ManuscriptStatus.Published);
+        var (items, totalCount) = await _manuscripts.ListPublishedPagedAsync(
+            page,
+            pageSize,
+            request.Search,
+            request.ResearchAreaId,
+            cancellationToken);
 
-        if (request.ResearchAreaId is int researchAreaId)
-        {
-            query = query.Where(m => m.ResearchAreaId == researchAreaId);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            var term = request.Search.Trim();
-            query = query.Where(m =>
-                m.Title.Contains(term) ||
-                (m.Summary != null && m.Summary.Contains(term)));
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var rows = await query
-            .OrderByDescending(m => m.PublishedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(m => new
-            {
-                m.Id,
-                m.Title,
-                m.Slug,
-                m.Summary,
-                m.PublishedAt,
-                ResearchAreaName = m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
-                AuthorTitle = m.Author == null ? AcademicTitle.Dr : m.Author.AcademicTitle,
-                AuthorFirstName = m.Author == null ? string.Empty : m.Author.FirstName,
-                AuthorLastName = m.Author == null ? string.Empty : m.Author.LastName
-            })
-            .ToListAsync(cancellationToken);
-
-        var items = rows.ConvertAll(m => new ManuscriptListItemDto(
+        var dtos = items.Select(m => new ManuscriptListItemDto(
             m.Id,
             m.Title,
             m.Slug,
             m.Summary,
             m.PublishedAt,
-            m.ResearchAreaName,
-            AcademicTitles.FormatName(m.AuthorTitle, m.AuthorFirstName, m.AuthorLastName)));
+            m.ResearchArea?.Name ?? string.Empty,
+            FormatAuthor(m.Author))).ToList();
 
-        return new PagedResult<ManuscriptListItemDto>(items, page, pageSize, totalCount);
+        return new PagedResult<ManuscriptListItemDto>(dtos, page, pageSize, totalCount);
     }
+
+    private static string FormatAuthor(User? author) =>
+        author is null
+            ? string.Empty
+            : AcademicTitles.FormatName(author.AcademicTitle, author.FirstName, author.LastName);
 }

@@ -42,4 +42,12 @@ public sealed class ReviewRepository : Repository<Review>, IReviewRepository
             .Include(r => r.Manuscript)
             .Include(r => r.Reviewer)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+    public Task<bool> ExistsForManuscriptAndReviewerAsync(
+        int manuscriptId,
+        int reviewerId,
+        CancellationToken cancellationToken = default) =>
+        Set.AnyAsync(
+            r => r.ManuscriptId == manuscriptId && r.ReviewerId == reviewerId,
+            cancellationToken);
 }

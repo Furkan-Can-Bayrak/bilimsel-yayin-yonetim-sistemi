@@ -1,9 +1,9 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts.Dtos;
 using Blog.Domain.Authorization;
+using Blog.Domain.Entities;
 using Blog.Domain.Enums;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Manuscripts.Queries.GetManuscriptById;
 
@@ -12,12 +12,17 @@ public sealed record GetManuscriptByIdQuery(int Id) : IRequest<AdminManuscriptDe
 public sealed class GetManuscriptByIdQueryHandler
     : IRequestHandler<GetManuscriptByIdQuery, AdminManuscriptDetailDto?>
 {
-    private readonly IApplicationDbContext _db;
+    private readonly IManuscriptRepository _manuscripts;
+    private readonly IReviewRepository _reviews;
     private readonly ICurrentUser _currentUser;
 
-    public GetManuscriptByIdQueryHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public GetManuscriptByIdQueryHandler(
+        IManuscriptRepository manuscripts,
+        IReviewRepository reviews,
+        ICurrentUser currentUser)
     {
-        _db = db;
+        _manuscripts = manuscripts;
+        _reviews = reviews;
         _currentUser = currentUser;
     }
 
@@ -28,78 +33,17 @@ public sealed class GetManuscriptByIdQueryHandler
         var includeReview = _currentUser.HasPermission(Permissions.Reviews.ViewAll)
             || _currentUser.HasPermission(Permissions.Reviews.Submit);
 
-        var row = await _db.Manuscripts
-            .AsNoTracking()
-            .Where(m => m.Id == request.Id)
-            .Select(m => new
-            {
-                m.Id,
-                m.Title,
-                m.Slug,
-                m.Content,
-                m.Summary,
-                m.PublishedAt,
-                m.Status,
-                m.ResearchAreaId,
-                ResearchAreaName = m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
-                m.AuthorId,
-                AuthorTitle = m.Author == null ? AcademicTitle.Dr : m.Author.AcademicTitle,
-                AuthorFirstName = m.Author == null ? string.Empty : m.Author.FirstName,
-                AuthorLastName = m.Author == null ? string.Empty : m.Author.LastName,
-                CurrentReview = includeReview
-                    ? m.Reviews
-                        .OrderByDescending(r => r.AssignedAtUtc)
-                        .Select(r => new
-                        {
-                            r.Id,
-                            r.ReviewerId,
-                            ReviewerTitle = r.Reviewer == null ? AcademicTitle.Dr : r.Reviewer.AcademicTitle,
-                            ReviewerFirstName = r.Reviewer == null ? string.Empty : r.Reviewer.FirstName,
-                            ReviewerLastName = r.Reviewer == null ? string.Empty : r.Reviewer.LastName,
-                            r.AssignedAtUtc,
-                            r.SubmittedAtUtc,
-                            r.Recommendation,
-                            r.Comments
-                        })
-                        .FirstOrDefault()
-                    : null
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+        var manuscript = await _manuscripts.GetByIdWithDetailsAsync(request.Id, cancellationToken);
 
-        if (row is null)
+        if (manuscript is null)
         {
             return null;
         }
 
-        var manuscript = new AdminManuscriptDetailDto(
-            row.Id,
-            row.Title,
-            row.Slug,
-            row.Content,
-            row.Summary,
-            row.PublishedAt,
-            row.Status,
-            row.ResearchAreaId,
-            row.ResearchAreaName,
-            row.AuthorId,
-            AcademicTitles.FormatName(row.AuthorTitle, row.AuthorFirstName, row.AuthorLastName),
-            row.CurrentReview is null
-                ? null
-                : new ReviewSummaryDto(
-                    row.CurrentReview.Id,
-                    row.CurrentReview.ReviewerId,
-                    AcademicTitles.FormatName(
-                        row.CurrentReview.ReviewerTitle,
-                        row.CurrentReview.ReviewerFirstName,
-                        row.CurrentReview.ReviewerLastName),
-                    row.CurrentReview.AssignedAtUtc,
-                    row.CurrentReview.SubmittedAtUtc,
-                    row.CurrentReview.Recommendation,
-                    row.CurrentReview.Comments));
-
         var isAssignedReviewer = _currentUser.UserId is int userId &&
-            await _db.Reviews.AnyAsync(
-                r => r.ManuscriptId == request.Id && r.ReviewerId == userId,
+            await _reviews.ExistsForManuscriptAndReviewerAsync(
+                request.Id,
+                userId,
                 cancellationToken);
 
         if (!ManuscriptAccess.CanView(manuscript.AuthorId, _currentUser, isAssignedReviewer))
@@ -107,21 +51,70 @@ public sealed class GetManuscriptByIdQueryHandler
             return null;
         }
 
-        // Yazar raporu görmesin; hakem yalnızca kendi atamasını görsün.
+        var dto = Map(manuscript, includeReview);
+
         if (!ManuscriptAccess.CanViewAll(_currentUser)
-            && manuscript.CurrentReview is not null
-            && manuscript.CurrentReview.ReviewerId != _currentUser.UserId)
+            && dto.CurrentReview is not null
+            && dto.CurrentReview.ReviewerId != _currentUser.UserId)
         {
-            return manuscript with { CurrentReview = null };
+            return dto with { CurrentReview = null };
         }
 
         if (!ManuscriptAccess.CanViewAll(_currentUser)
             && !_currentUser.HasPermission(Permissions.Reviews.ViewAll)
             && _currentUser.UserId == manuscript.AuthorId)
         {
-            return manuscript with { CurrentReview = null };
+            return dto with { CurrentReview = null };
         }
 
-        return manuscript;
+        return dto;
+    }
+
+    private static AdminManuscriptDetailDto Map(Manuscript manuscript, bool includeReview)
+    {
+        return new AdminManuscriptDetailDto(
+            manuscript.Id,
+            manuscript.Title,
+            manuscript.Slug,
+            manuscript.Content,
+            manuscript.Summary,
+            manuscript.PublishedAt,
+            manuscript.Status,
+            manuscript.ResearchAreaId,
+            manuscript.ResearchArea?.Name ?? string.Empty,
+            manuscript.AuthorId,
+            manuscript.Author is null
+                ? string.Empty
+                : AcademicTitles.FormatName(
+                    manuscript.Author.AcademicTitle,
+                    manuscript.Author.FirstName,
+                    manuscript.Author.LastName),
+            includeReview ? MapCurrentReview(manuscript) : null);
+    }
+
+    private static ReviewSummaryDto? MapCurrentReview(Manuscript manuscript)
+    {
+        var review = manuscript.Reviews
+            .OrderByDescending(r => r.AssignedAtUtc)
+            .FirstOrDefault();
+
+        if (review is null)
+        {
+            return null;
+        }
+
+        return new ReviewSummaryDto(
+            review.Id,
+            review.ReviewerId,
+            review.Reviewer is null
+                ? string.Empty
+                : AcademicTitles.FormatName(
+                    review.Reviewer.AcademicTitle,
+                    review.Reviewer.FirstName,
+                    review.Reviewer.LastName),
+            review.AssignedAtUtc,
+            review.SubmittedAtUtc,
+            review.Recommendation,
+            review.Comments);
     }
 }

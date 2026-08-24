@@ -2,9 +2,9 @@ using Blog.Application.Common.Interfaces;
 using Blog.Application.Common.Models;
 using Blog.Application.Manuscripts.Dtos;
 using Blog.Domain.Authorization;
+using Blog.Domain.Entities;
 using Blog.Domain.Enums;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Application.Manuscripts.Queries.GetAdminManuscripts;
 
@@ -19,12 +19,14 @@ public sealed class GetAdminManuscriptsQueryHandler
     : IRequestHandler<GetAdminManuscriptsQuery, PagedResult<AdminManuscriptListItemDto>>
 {
     private const int MaxPageSize = 50;
-    private readonly IApplicationDbContext _db;
+    private readonly IManuscriptRepository _manuscripts;
     private readonly ICurrentUser _currentUser;
 
-    public GetAdminManuscriptsQueryHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public GetAdminManuscriptsQueryHandler(
+        IManuscriptRepository manuscripts,
+        ICurrentUser currentUser)
     {
-        _db = db;
+        _manuscripts = manuscripts;
         _currentUser = currentUser;
     }
 
@@ -37,79 +39,19 @@ public sealed class GetAdminManuscriptsQueryHandler
             ? 10
             : Math.Min(request.PageSize, MaxPageSize);
 
-        var query = ManuscriptAccess.VisibleTo(_db.Manuscripts.AsNoTracking(), _currentUser);
-
-        if (request.ResearchAreaId is int researchAreaId)
-        {
-            query = query.Where(m => m.ResearchAreaId == researchAreaId);
-        }
-
-        if (request.Status is ManuscriptStatus status)
-        {
-            query = query.Where(m => m.Status == status);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            var term = request.Search.Trim();
-            query = query.Where(m =>
-                m.Title.Contains(term) ||
-                (m.Summary != null && m.Summary.Contains(term)));
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
         var includeReview = _currentUser.HasPermission(Permissions.Reviews.ViewAll);
 
-        // Öncelik: hakem raporu geldi → incelemede (bekleniyor) → gönderildi → yayın/kabul/ret/taslak
-        var rows = await query
-            .OrderBy(m =>
-                m.Status == ManuscriptStatus.UnderReview
-                    && m.Reviews.Any(r => r.SubmittedAtUtc != null)
-                    ? 0 :
-                m.Status == ManuscriptStatus.UnderReview ? 1 :
-                m.Status == ManuscriptStatus.Submitted ? 2 :
-                m.Status == ManuscriptStatus.Published ? 3 :
-                m.Status == ManuscriptStatus.Accepted ? 4 :
-                m.Status == ManuscriptStatus.Rejected ? 5 :
-                6)
-            .ThenByDescending(m => m.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(m => new
-            {
-                m.Id,
-                m.Title,
-                m.Slug,
-                m.Summary,
-                m.PublishedAt,
-                m.Status,
-                m.ResearchAreaId,
-                ResearchAreaName = m.ResearchArea != null ? m.ResearchArea.Name : string.Empty,
-                m.AuthorId,
-                AuthorTitle = m.Author == null ? AcademicTitle.Dr : m.Author.AcademicTitle,
-                AuthorFirstName = m.Author == null ? string.Empty : m.Author.FirstName,
-                AuthorLastName = m.Author == null ? string.Empty : m.Author.LastName,
-                CurrentReview = includeReview
-                    ? m.Reviews
-                        .OrderByDescending(r => r.AssignedAtUtc)
-                        .Select(r => new
-                        {
-                            r.Id,
-                            r.ReviewerId,
-                            ReviewerTitle = r.Reviewer == null ? AcademicTitle.Dr : r.Reviewer.AcademicTitle,
-                            ReviewerFirstName = r.Reviewer == null ? string.Empty : r.Reviewer.FirstName,
-                            ReviewerLastName = r.Reviewer == null ? string.Empty : r.Reviewer.LastName,
-                            r.AssignedAtUtc,
-                            r.SubmittedAtUtc,
-                            r.Recommendation,
-                            r.Comments
-                        })
-                        .FirstOrDefault()
-                    : null
-            })
-            .ToListAsync(cancellationToken);
+        var (manuscripts, totalCount) = await _manuscripts.ListVisiblePagedAsync(
+            page,
+            pageSize,
+            request.Search,
+            request.ResearchAreaId,
+            request.Status,
+            _currentUser.UserId,
+            ManuscriptAccess.CanViewAll(_currentUser),
+            cancellationToken);
 
-        var items = rows.ConvertAll(m => new AdminManuscriptListItemDto(
+        var items = manuscripts.Select(m => new AdminManuscriptListItemDto(
             m.Id,
             m.Title,
             m.Slug,
@@ -117,23 +59,42 @@ public sealed class GetAdminManuscriptsQueryHandler
             m.PublishedAt,
             m.Status,
             m.ResearchAreaId,
-            m.ResearchAreaName,
+            m.ResearchArea?.Name ?? string.Empty,
             m.AuthorId,
-            AcademicTitles.FormatName(m.AuthorTitle, m.AuthorFirstName, m.AuthorLastName),
-            m.CurrentReview is null
-                ? null
-                : new ReviewSummaryDto(
-                    m.CurrentReview.Id,
-                    m.CurrentReview.ReviewerId,
-                    AcademicTitles.FormatName(
-                        m.CurrentReview.ReviewerTitle,
-                        m.CurrentReview.ReviewerFirstName,
-                        m.CurrentReview.ReviewerLastName),
-                    m.CurrentReview.AssignedAtUtc,
-                    m.CurrentReview.SubmittedAtUtc,
-                    m.CurrentReview.Recommendation,
-                    m.CurrentReview.Comments)));
+            m.Author is null
+                ? string.Empty
+                : AcademicTitles.FormatName(
+                    m.Author.AcademicTitle,
+                    m.Author.FirstName,
+                    m.Author.LastName),
+            includeReview ? MapCurrentReview(m) : null)).ToList();
 
         return new PagedResult<AdminManuscriptListItemDto>(items, page, pageSize, totalCount);
+    }
+
+    private static ReviewSummaryDto? MapCurrentReview(Manuscript manuscript)
+    {
+        var review = manuscript.Reviews
+            .OrderByDescending(r => r.AssignedAtUtc)
+            .FirstOrDefault();
+
+        if (review is null)
+        {
+            return null;
+        }
+
+        return new ReviewSummaryDto(
+            review.Id,
+            review.ReviewerId,
+            review.Reviewer is null
+                ? string.Empty
+                : AcademicTitles.FormatName(
+                    review.Reviewer.AcademicTitle,
+                    review.Reviewer.FirstName,
+                    review.Reviewer.LastName),
+            review.AssignedAtUtc,
+            review.SubmittedAtUtc,
+            review.Recommendation,
+            review.Comments);
     }
 }
