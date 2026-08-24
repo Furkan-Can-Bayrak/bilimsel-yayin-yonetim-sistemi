@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Blog.Application.Common.Authorization;
 using Blog.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blog.API.Infrastructure.Authorization;
 
@@ -26,14 +25,11 @@ public static class SecurityVersionValidator
             return;
         }
 
-        var db = context.HttpContext.RequestServices.GetRequiredService<IApplicationDbContext>();
+        var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
 
         // Silinmiş kullanıcılar query filter ile düştüğü için burada da bulunamaz;
         // yani hesabın silinmesi tokenlarını anında geçersiz kılar.
-        var account = await db.Users
-            .Where(u => u.Id == userId)
-            .Select(u => new { u.SecurityVersion, u.IsActive })
-            .FirstOrDefaultAsync(context.HttpContext.RequestAborted);
+        var account = await users.GetByIdAsync(userId, context.HttpContext.RequestAborted);
 
         if (account is null || !account.IsActive)
         {
