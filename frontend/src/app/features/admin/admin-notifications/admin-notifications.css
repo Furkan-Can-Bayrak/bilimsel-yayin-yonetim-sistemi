@@ -50,8 +50,28 @@
 .row {
   display: flex;
   gap: 1rem;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: space-between;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.body.link {
+  cursor: pointer;
+}
+
+.body.link:hover strong {
+  text-decoration: underline;
+}
+
+.read-zone {
+  flex: 0 0 7.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .message {

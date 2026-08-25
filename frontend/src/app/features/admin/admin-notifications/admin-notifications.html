@@ -6,6 +6,8 @@
     </div>
     @if (canViewAll) {
       <a routerLink="/admin" class="btn ghost">Makale listesine dön</a>
+    } @else if (canSubmitReview) {
+      <a routerLink="/admin/reviews" class="btn ghost">Değerlendirmelere dön</a>
     }
   </header>
 
@@ -20,21 +22,27 @@
       @for (item of items(); track item.id) {
         <li [class.unread]="!item.isRead">
           <div class="row">
-            <div>
+            <div
+              class="body"
+              [class.link]="hasTarget(item)"
+              (click)="openTarget(item)"
+            >
               <strong>{{ item.title }}</strong>
               <p class="message">{{ item.message }}</p>
               <p class="meta">{{ item.createdAtUtc | date: 'd MMM y HH:mm' }}</p>
             </div>
-            @if (!item.isRead) {
-              <button
-                type="button"
-                class="btn ghost"
-                [disabled]="busyId() === item.id"
-                (click)="markRead(item)"
-              >
-                Okundu
-              </button>
-            }
+            <div class="read-zone">
+              @if (!item.isRead) {
+                <button
+                  type="button"
+                  class="btn ghost"
+                  [disabled]="busyId() === item.id"
+                  (click)="markRead(item, $event)"
+                >
+                  Okundu
+                </button>
+              }
+            </div>
           </div>
         </li>
       }

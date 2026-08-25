@@ -1,5 +1,6 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Notifications.Dtos;
+using Blog.Domain.Authorization;
 using MediatR;
 
 namespace Blog.Application.Notifications.Queries.GetNotifications;
@@ -10,13 +11,16 @@ public sealed class GetNotificationsQueryHandler
     : IRequestHandler<GetNotificationsQuery, IReadOnlyList<NotificationDto>>
 {
     private readonly INotificationRepository _notifications;
+    private readonly IReviewRepository _reviews;
     private readonly ICurrentUser _currentUser;
 
     public GetNotificationsQueryHandler(
         INotificationRepository notifications,
+        IReviewRepository reviews,
         ICurrentUser currentUser)
     {
         _notifications = notifications;
+        _reviews = reviews;
         _currentUser = currentUser;
     }
 
@@ -29,14 +33,38 @@ public sealed class GetNotificationsQueryHandler
 
         var items = await _notifications.ListForUserAsync(userId, take, cancellationToken);
 
+        Dictionary<int, int>? reviewByManuscript = null;
+        if (_currentUser.HasPermission(Permissions.Reviews.Submit))
+        {
+            var reviews = await _reviews.ListByReviewerAsync(userId, cancellationToken);
+            reviewByManuscript = reviews
+                .GroupBy(r => r.ManuscriptId)
+                .ToDictionary(g => g.Key, g => g.First().Id);
+        }
+
         return items
             .Select(n => new NotificationDto(
                 n.Id,
                 n.Title,
                 n.Message,
                 n.RelatedManuscriptId,
+                RelatedReviewId(n.RelatedManuscriptId, reviewByManuscript),
                 n.CreatedAtUtc,
                 n.IsRead))
             .ToList();
+    }
+
+    private static int? RelatedReviewId(
+        int? relatedManuscriptId,
+        Dictionary<int, int>? reviewByManuscript)
+    {
+        if (relatedManuscriptId is int manuscriptId
+            && reviewByManuscript is not null
+            && reviewByManuscript.TryGetValue(manuscriptId, out var reviewId))
+        {
+            return reviewId;
+        }
+
+        return null;
     }
 }
