@@ -1,15 +1,19 @@
 using Blog.Application.Common.Interfaces;
+using Blog.Application.Common.Models;
 using Blog.Application.Notifications.Dtos;
 using Blog.Domain.Authorization;
 using MediatR;
 
 namespace Blog.Application.Notifications.Queries.GetNotifications;
 
-public sealed record GetNotificationsQuery(int Take = 50) : IRequest<IReadOnlyList<NotificationDto>>;
+public sealed record GetNotificationsQuery(
+    int Page = 1,
+    int PageSize = 10) : IRequest<PagedResult<NotificationDto>>;
 
 public sealed class GetNotificationsQueryHandler
-    : IRequestHandler<GetNotificationsQuery, IReadOnlyList<NotificationDto>>
+    : IRequestHandler<GetNotificationsQuery, PagedResult<NotificationDto>>
 {
+    private const int MaxPageSize = 50;
     private readonly INotificationRepository _notifications;
     private readonly IReviewRepository _reviews;
     private readonly ICurrentUser _currentUser;
@@ -24,14 +28,21 @@ public sealed class GetNotificationsQueryHandler
         _currentUser = currentUser;
     }
 
-    public async Task<IReadOnlyList<NotificationDto>> Handle(
+    public async Task<PagedResult<NotificationDto>> Handle(
         GetNotificationsQuery request,
         CancellationToken cancellationToken)
     {
         var userId = _currentUser.RequireUserId();
-        var take = request.Take < 1 ? 50 : Math.Min(request.Take, 100);
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = request.PageSize < 1
+            ? 10
+            : Math.Min(request.PageSize, MaxPageSize);
 
-        var items = await _notifications.ListForUserAsync(userId, take, cancellationToken);
+        var (items, totalCount) = await _notifications.ListForUserPagedAsync(
+            userId,
+            page,
+            pageSize,
+            cancellationToken);
 
         Dictionary<int, int>? reviewByManuscript = null;
         if (_currentUser.HasPermission(Permissions.Reviews.Submit))
@@ -42,7 +53,7 @@ public sealed class GetNotificationsQueryHandler
                 .ToDictionary(g => g.Key, g => g.First().Id);
         }
 
-        return items
+        var dtos = items
             .Select(n => new NotificationDto(
                 n.Id,
                 n.Title,
@@ -52,6 +63,8 @@ public sealed class GetNotificationsQueryHandler
                 n.CreatedAtUtc,
                 n.IsRead))
             .ToList();
+
+        return new PagedResult<NotificationDto>(dtos, page, pageSize, totalCount);
     }
 
     private static int? RelatedReviewId(

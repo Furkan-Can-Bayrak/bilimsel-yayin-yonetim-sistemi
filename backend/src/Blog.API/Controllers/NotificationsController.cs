@@ -1,6 +1,7 @@
 using Blog.API.Infrastructure.Authorization;
 using Blog.Application.Notifications.Commands.MarkNotificationRead;
 using Blog.Application.Notifications.Queries.GetNotifications;
+using Blog.Application.Notifications.Queries.GetUnreadNotificationCount;
 using Blog.Domain.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -21,11 +22,23 @@ public class NotificationsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] int take = 50,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var items = await _mediator.Send(new GetNotificationsQuery(take), cancellationToken);
-        return Ok(items);
+        var result = await _mediator.Send(
+            new GetNotificationsQuery(page, pageSize),
+            cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> GetUnreadCount(CancellationToken cancellationToken)
+    {
+        var count = await _mediator.Send(
+            new GetUnreadNotificationCountQuery(),
+            cancellationToken);
+        return Ok(new { count });
     }
 
     [HttpPost("{id:int}/read")]

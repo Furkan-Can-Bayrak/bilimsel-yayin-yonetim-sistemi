@@ -116,3 +116,14 @@
 .error {
   color: #9b1c1c;
 }
+
+.more-error,
+.more-error {
+  margin: 0.75rem 0 0;
+}
+
+.load-more {
+  min-height: 2.5rem;
+  padding: 0.85rem 0 0.25rem;
+  text-align: center;
+}

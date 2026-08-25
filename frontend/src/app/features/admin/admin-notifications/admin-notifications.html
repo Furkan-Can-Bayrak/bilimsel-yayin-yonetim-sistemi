@@ -11,9 +11,9 @@
     }
   </header>
 
-  @if (loading()) {
+  @if (loading() && items().length === 0) {
     <p class="muted">Yükleniyor…</p>
-  } @else if (error()) {
+  } @else if (error() && items().length === 0) {
     <p class="error">{{ error() }}</p>
   } @else if (items().length === 0) {
     <p class="muted">Henüz bildiriminiz yok.</p>
@@ -47,5 +47,21 @@
         </li>
       }
     </ul>
+
+    @if (error() && items().length > 0) {
+      <p class="error more-error">{{ error() }}</p>
+    }
+
+    @if (hasNext()) {
+      <div #loadSentinel class="load-more">
+        @if (loadingMore()) {
+          <p class="muted">Yükleniyor…</p>
+        } @else if (loadError()) {
+          <button type="button" class="btn ghost" (click)="retryLoadMore()">
+            Daha fazla yükle
+          </button>
+        }
+      </div>
+    }
   }
 </section>

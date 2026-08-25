@@ -17,15 +17,28 @@ public sealed class NotificationRepository : Repository<Notification>, INotifica
         CancellationToken cancellationToken = default) =>
         Set.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId, cancellationToken);
 
-    public async Task<IReadOnlyList<Notification>> ListForUserAsync(
+    public async Task<(IReadOnlyList<Notification> Items, int TotalCount)> ListForUserPagedAsync(
         int userId,
-        int take,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default)
     {
-        return await Set.AsNoTracking()
+        var query = Set.AsNoTracking()
             .Where(n => n.UserId == userId)
             .OrderByDescending(n => n.CreatedAtUtc)
-            .Take(take)
+            .ThenByDescending(n => n.Id);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
+
+    public Task<int> CountUnreadForUserAsync(
+        int userId,
+        CancellationToken cancellationToken = default) =>
+        Set.CountAsync(n => n.UserId == userId && !n.IsRead, cancellationToken);
 }

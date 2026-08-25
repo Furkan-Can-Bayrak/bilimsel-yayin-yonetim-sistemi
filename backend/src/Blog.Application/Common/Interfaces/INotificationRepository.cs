@@ -9,8 +9,13 @@ public interface INotificationRepository : IRepository<Notification>
         int userId,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<Notification>> ListForUserAsync(
+    Task<(IReadOnlyList<Notification> Items, int TotalCount)> ListForUserPagedAsync(
         int userId,
-        int take,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountUnreadForUserAsync(
+        int userId,
         CancellationToken cancellationToken = default);
 }

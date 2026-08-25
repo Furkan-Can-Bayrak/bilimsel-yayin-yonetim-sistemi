@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PagedResult } from '../models/manuscript.model';
 import { AppNotification } from '../models/notification.model';
 
 @Injectable({
@@ -14,9 +15,12 @@ export class NotificationService {
   private readonly unreadCountSignal = signal(0);
   readonly unreadCount = this.unreadCountSignal.asReadonly();
 
-  getAll(take = 50): Observable<AppNotification[]> {
-    return this.http.get<AppNotification[]>(this.baseUrl, {
-      params: { take: String(take) },
+  getPage(page = 1, pageSize = 10): Observable<PagedResult<AppNotification>> {
+    return this.http.get<PagedResult<AppNotification>>(this.baseUrl, {
+      params: {
+        page: String(page),
+        pageSize: String(pageSize),
+      },
     });
   }
 
@@ -30,14 +34,10 @@ export class NotificationService {
 
   /** Nav rozeti için okunmamış sayısını yeniler. */
   refreshUnreadCount(): void {
-    this.getAll(50).subscribe({
-      next: (items) => this.syncUnreadFrom(items),
+    this.http.get<{ count: number }>(`${this.baseUrl}/unread-count`).subscribe({
+      next: (res) => this.unreadCountSignal.set(res.count),
       error: () => this.unreadCountSignal.set(0),
     });
-  }
-
-  syncUnreadFrom(items: AppNotification[]): void {
-    this.unreadCountSignal.set(items.filter((item) => !item.isRead).length);
   }
 
   clearUnreadCount(): void {
