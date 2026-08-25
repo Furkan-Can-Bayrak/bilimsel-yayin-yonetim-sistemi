@@ -17,10 +17,9 @@
           <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
             Editör paneli
           </a>
-        } @else if (auth.hasPermission(Permissions.Manuscripts.Create)) {
-          <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            Makalelerim
-          </a>
+        }
+        @if (auth.hasPermission(Permissions.Manuscripts.Create)) {
+          <a routerLink="/admin/mine" routerLinkActive="active">Makalelerim</a>
         }
         @if (auth.hasPermission(Permissions.Reviews.Submit)) {
           <a routerLink="/admin/reviews" routerLinkActive="active">Değerlendirmelerim</a>

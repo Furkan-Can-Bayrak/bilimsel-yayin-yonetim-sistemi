@@ -1,5 +1,6 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
+using Blog.Application.Manuscripts;
 using Blog.Domain.Entities;
 using MediatR;
 
@@ -11,15 +12,18 @@ public sealed class RejectManuscriptCommandHandler : IRequestHandler<RejectManus
 {
     private readonly IRepository<Manuscript> _manuscripts;
     private readonly IUnitOfWork _uow;
+    private readonly ICurrentUser _currentUser;
     private readonly INotificationService _notifications;
 
     public RejectManuscriptCommandHandler(
         IRepository<Manuscript> manuscripts,
         IUnitOfWork uow,
+        ICurrentUser currentUser,
         INotificationService notifications)
     {
         _manuscripts = manuscripts;
         _uow = uow;
+        _currentUser = currentUser;
         _notifications = notifications;
     }
 
@@ -32,6 +36,7 @@ public sealed class RejectManuscriptCommandHandler : IRequestHandler<RejectManus
             throw new NotFoundException($"Makale bulunamadı: {request.Id}");
         }
 
+        ManuscriptAccess.EnsureNotActingOnOwn(manuscript.AuthorId, _currentUser);
         ManuscriptAccess.ApplyTransition(manuscript.Reject);
         await _uow.SaveChangesAsync(cancellationToken);
 

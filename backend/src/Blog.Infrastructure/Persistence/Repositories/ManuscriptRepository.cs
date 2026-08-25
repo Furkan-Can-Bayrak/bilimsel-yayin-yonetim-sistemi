@@ -83,21 +83,44 @@ public sealed class ManuscriptRepository : Repository<Manuscript>, IManuscriptRe
             .ThenInclude(r => r.Reviewer)
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
-    public async Task<(IReadOnlyList<Manuscript> Items, int TotalCount)> ListVisiblePagedAsync(
+    public Task<(IReadOnlyList<Manuscript> Items, int TotalCount)> ListEditorialPagedAsync(
         int page,
         int pageSize,
         string? search,
         int? researchAreaId,
         ManuscriptStatus? status,
-        int? viewerUserId,
-        bool canViewAll,
+        int editorUserId,
         CancellationToken cancellationToken = default)
     {
-        var query = ApplyListFilters(
-            ApplyVisibility(Set.AsNoTracking(), canViewAll, viewerUserId),
-            search,
-            researchAreaId,
-            status);
+        var query = Set.AsNoTracking()
+            .Where(m => m.AuthorId != editorUserId && m.Status != ManuscriptStatus.Draft);
+
+        return ListAdminPagedAsync(query, page, pageSize, search, researchAreaId, status, cancellationToken);
+    }
+
+    public Task<(IReadOnlyList<Manuscript> Items, int TotalCount)> ListMinePagedAsync(
+        int page,
+        int pageSize,
+        string? search,
+        int? researchAreaId,
+        ManuscriptStatus? status,
+        int authorId,
+        CancellationToken cancellationToken = default)
+    {
+        var query = Set.AsNoTracking().Where(m => m.AuthorId == authorId);
+        return ListAdminPagedAsync(query, page, pageSize, search, researchAreaId, status, cancellationToken);
+    }
+
+    private async Task<(IReadOnlyList<Manuscript> Items, int TotalCount)> ListAdminPagedAsync(
+        IQueryable<Manuscript> query,
+        int page,
+        int pageSize,
+        string? search,
+        int? researchAreaId,
+        ManuscriptStatus? status,
+        CancellationToken cancellationToken)
+    {
+        query = ApplyListFilters(query, search, researchAreaId, status);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -122,24 +145,6 @@ public sealed class ManuscriptRepository : Repository<Manuscript>, IManuscriptRe
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
-    }
-
-    private static IQueryable<Manuscript> ApplyVisibility(
-        IQueryable<Manuscript> query,
-        bool canViewAll,
-        int? viewerUserId)
-    {
-        if (canViewAll)
-        {
-            return query;
-        }
-
-        if (viewerUserId is int userId)
-        {
-            return query.Where(m => m.AuthorId == userId);
-        }
-
-        return query.Where(_ => false);
     }
 
     private static IQueryable<Manuscript> ApplyListFilters(

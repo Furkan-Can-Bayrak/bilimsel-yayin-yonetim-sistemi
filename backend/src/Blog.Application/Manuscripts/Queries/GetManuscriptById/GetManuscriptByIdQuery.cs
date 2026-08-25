@@ -46,7 +46,7 @@ public sealed class GetManuscriptByIdQueryHandler
                 userId,
                 cancellationToken);
 
-        if (!ManuscriptAccess.CanView(manuscript.AuthorId, _currentUser, isAssignedReviewer))
+        if (!ManuscriptAccess.CanViewRecord(manuscript, _currentUser, isAssignedReviewer))
         {
             return null;
         }

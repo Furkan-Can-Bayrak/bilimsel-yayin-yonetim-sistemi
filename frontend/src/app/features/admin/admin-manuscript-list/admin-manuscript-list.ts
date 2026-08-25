@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { Observable } from 'rxjs';
 import {
@@ -29,9 +29,10 @@ export class AdminManuscriptList implements OnInit {
   private readonly researchAreasApi = inject(ResearchAreaService);
   private readonly reviewsApi = inject(ReviewService);
   private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly statusLabels = MANUSCRIPT_STATUS_LABELS;
-  readonly statusOptions = MANUSCRIPT_STATUSES;
+  isEditorPanel = false;
 
   readonly canCreate = this.auth.hasPermission(Permissions.Manuscripts.Create);
   readonly canUpdate = this.auth.hasPermission(Permissions.Manuscripts.Update);
@@ -41,7 +42,6 @@ export class AdminManuscriptList implements OnInit {
   readonly canUnpublish = this.auth.hasPermission(Permissions.Manuscripts.Unpublish);
   readonly canAssign = this.auth.hasPermission(Permissions.Reviews.Assign);
   readonly canViewReviews = this.auth.hasPermission(Permissions.Reviews.ViewAll);
-  readonly isEditorPanel = this.auth.hasPermission(Permissions.Manuscripts.ViewAll);
 
   readonly manuscripts = signal<AdminManuscriptListItem[]>([]);
   readonly researchAreas = signal<ResearchArea[]>([]);
@@ -71,7 +71,21 @@ export class AdminManuscriptList implements OnInit {
     this.researchAreasApi.getAll().subscribe({
       next: (data) => this.researchAreas.set(data),
     });
-    this.reload();
+
+    this.route.data.subscribe((data) => {
+      this.isEditorPanel = data['editorPanel'] === true;
+      if (this.isEditorPanel && this.statusFilter === 'Draft') {
+        this.statusFilter = '';
+      }
+      this.page.set(1);
+      this.reload();
+    });
+  }
+
+  get statusOptions(): ManuscriptStatus[] {
+    return this.isEditorPanel
+      ? MANUSCRIPT_STATUSES.filter((status) => status !== 'Draft')
+      : MANUSCRIPT_STATUSES;
   }
 
   isOwn(manuscript: AdminManuscriptListItem): boolean {
@@ -111,14 +125,19 @@ export class AdminManuscriptList implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.manuscriptsApi
-      .getAdminList({
-        page: this.page(),
-        pageSize: this.pageSize,
-        search: this.search,
-        researchAreaId: this.researchAreaId,
-        status: this.statusFilter || null,
-      })
+    const query = {
+      page: this.page(),
+      pageSize: this.pageSize,
+      search: this.search,
+      researchAreaId: this.researchAreaId,
+      status: this.statusFilter || null,
+    };
+
+    const request = this.isEditorPanel
+      ? this.manuscriptsApi.getAdminList(query)
+      : this.manuscriptsApi.getMyList(query);
+
+    request
       .subscribe({
         next: (data) => {
           this.manuscripts.set(data.items);

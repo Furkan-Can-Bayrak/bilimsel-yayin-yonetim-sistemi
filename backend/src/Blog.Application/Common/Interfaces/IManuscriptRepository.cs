@@ -33,13 +33,21 @@ public interface IManuscriptRepository : IRepository<Manuscript>
         int id,
         CancellationToken cancellationToken = default);
 
-    Task<(IReadOnlyList<Manuscript> Items, int TotalCount)> ListVisiblePagedAsync(
+    Task<(IReadOnlyList<Manuscript> Items, int TotalCount)> ListEditorialPagedAsync(
         int page,
         int pageSize,
         string? search,
         int? researchAreaId,
         ManuscriptStatus? status,
-        int? viewerUserId,
-        bool canViewAll,
+        int editorUserId,
+        CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<Manuscript> Items, int TotalCount)> ListMinePagedAsync(
+        int page,
+        int pageSize,
+        string? search,
+        int? researchAreaId,
+        ManuscriptStatus? status,
+        int authorId,
         CancellationToken cancellationToken = default);
 }

@@ -4,7 +4,7 @@
       <h1>{{ isEditorPanel ? 'Makale yönetimi' : 'Makalelerim' }}</h1>
       <p class="lead">
         @if (isEditorPanel) {
-          Taslakları inceleyin, hakem atayın, raporlara bakıp kabul veya ret verin.
+          Gönderilmiş makalelere hakem atayın, raporlara bakıp kabul veya ret verin.
         } @else {
           Taslaklarınızı kaydedin, ardından değerlendirmeye gönderin.
         }
@@ -139,7 +139,7 @@
               </td>
               <td class="actions">
                 <div class="actions-row">
-                @if (canAssign && manuscript.status === 'Submitted') {
+                @if (isEditorPanel && canAssign && !isOwn(manuscript) && manuscript.status === 'Submitted') {
                   <button
                     type="button"
                     class="btn ghost"
@@ -149,7 +149,7 @@
                     Hakem ata
                   </button>
                 }
-                @if (canDecide && (manuscript.status === 'Submitted' || manuscript.status === 'UnderReview')) {
+                @if (isEditorPanel && canDecide && !isOwn(manuscript) && (manuscript.status === 'Submitted' || manuscript.status === 'UnderReview')) {
                   <button
                     type="button"
                     class="icon-btn accept"
@@ -188,7 +188,7 @@
                     </svg>
                   </button>
                 }
-                @if (canPublish && manuscript.status === 'Accepted') {
+                @if (isEditorPanel && canPublish && !isOwn(manuscript) && manuscript.status === 'Accepted') {
                   <button
                     type="button"
                     class="btn ghost"
@@ -198,7 +198,7 @@
                     Yayınla
                   </button>
                 }
-                @if (canUnpublish && manuscript.status === 'Published') {
+                @if (isEditorPanel && canUnpublish && !isOwn(manuscript) && manuscript.status === 'Published') {
                   <button
                     type="button"
                     class="btn ghost"

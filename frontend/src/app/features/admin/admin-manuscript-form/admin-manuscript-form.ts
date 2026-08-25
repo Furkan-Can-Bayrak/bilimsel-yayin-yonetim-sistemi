@@ -60,9 +60,13 @@ export class AdminManuscriptForm implements OnInit {
   }
 
   get backLink(): string {
-    return this.auth.hasAnyPermission(Permissions.Manuscripts.ViewAll, Permissions.Manuscripts.Create)
-      ? '/admin'
-      : '/';
+    if (this.auth.hasPermission(Permissions.Manuscripts.Create)) {
+      return '/admin/mine';
+    }
+    if (this.auth.hasPermission(Permissions.Manuscripts.ViewAll)) {
+      return '/admin';
+    }
+    return '/';
   }
 
   get canEditContent(): boolean {
@@ -92,11 +96,14 @@ export class AdminManuscriptForm implements OnInit {
 
   get canDecide(): boolean {
     return this.auth.hasPermission(Permissions.Manuscripts.Decide) &&
+      !this.isOwn &&
       (this.status() === 'Submitted' || this.status() === 'UnderReview');
   }
 
   get canAssign(): boolean {
-    return this.auth.hasPermission(Permissions.Reviews.Assign) && this.status() === 'Submitted';
+    return this.auth.hasPermission(Permissions.Reviews.Assign) &&
+      !this.isOwn &&
+      this.status() === 'Submitted';
   }
 
   get canViewReviews(): boolean {
@@ -104,11 +111,15 @@ export class AdminManuscriptForm implements OnInit {
   }
 
   get canPublish(): boolean {
-    return this.auth.hasPermission(Permissions.Manuscripts.Publish) && this.status() === 'Accepted';
+    return this.auth.hasPermission(Permissions.Manuscripts.Publish) &&
+      !this.isOwn &&
+      this.status() === 'Accepted';
   }
 
   get canUnpublish(): boolean {
-    return this.auth.hasPermission(Permissions.Manuscripts.Unpublish) && this.status() === 'Published';
+    return this.auth.hasPermission(Permissions.Manuscripts.Unpublish) &&
+      !this.isOwn &&
+      this.status() === 'Published';
   }
 
   ngOnInit(): void {
@@ -212,9 +223,7 @@ export class AdminManuscriptForm implements OnInit {
     const id = this.editId();
     const onOk = () => {
       this.submitting.set(false);
-      const next = this.auth.hasAnyPermission(Permissions.Manuscripts.ViewAll, Permissions.Manuscripts.Create)
-        ? '/admin'
-        : '/';
+      const next = this.backLink;
       void this.router.navigateByUrl(next);
     };
     const onErr = (err: unknown) => {

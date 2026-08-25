@@ -9,7 +9,7 @@ import { AdminReviewQueue } from './features/admin/admin-review-queue/admin-revi
 import { AdminReviewForm } from './features/admin/admin-review-form/admin-review-form';
 import { AdminResearchAreas } from './features/admin/admin-research-areas/admin-research-areas';
 import { AdminUsers } from './features/admin/admin-users/admin-users';
-import { authGuard, permissionGuard, permissionGuardAny } from './core/guards/auth.guard';
+import { authGuard, permissionGuard } from './core/guards/auth.guard';
 import { Permissions } from './core/auth/permissions';
 
 export const routes: Routes = [
@@ -23,7 +23,14 @@ export const routes: Routes = [
       {
         path: '',
         component: AdminManuscriptList,
-        canActivate: [permissionGuardAny(Permissions.Manuscripts.ViewAll, Permissions.Manuscripts.Create)],
+        canActivate: [permissionGuard(Permissions.Manuscripts.ViewAll)],
+        data: { editorPanel: true },
+      },
+      {
+        path: 'mine',
+        component: AdminManuscriptList,
+        canActivate: [permissionGuard(Permissions.Manuscripts.Create)],
+        data: { editorPanel: false },
       },
       {
         path: 'manuscripts/new',

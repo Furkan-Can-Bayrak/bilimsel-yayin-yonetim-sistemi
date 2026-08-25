@@ -1,28 +1,27 @@
-using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Common.Models;
 using Blog.Application.Manuscripts.Dtos;
-using Blog.Domain.Authorization;
+using Blog.Application.Manuscripts.Queries.GetAdminManuscripts;
 using Blog.Domain.Enums;
 using MediatR;
 
-namespace Blog.Application.Manuscripts.Queries.GetAdminManuscripts;
+namespace Blog.Application.Manuscripts.Queries.GetMyManuscripts;
 
-public sealed record GetAdminManuscriptsQuery(
+public sealed record GetMyManuscriptsQuery(
     int Page = 1,
     int PageSize = 10,
     string? Search = null,
     int? ResearchAreaId = null,
     ManuscriptStatus? Status = null) : IRequest<PagedResult<AdminManuscriptListItemDto>>;
 
-public sealed class GetAdminManuscriptsQueryHandler
-    : IRequestHandler<GetAdminManuscriptsQuery, PagedResult<AdminManuscriptListItemDto>>
+public sealed class GetMyManuscriptsQueryHandler
+    : IRequestHandler<GetMyManuscriptsQuery, PagedResult<AdminManuscriptListItemDto>>
 {
     private const int MaxPageSize = 50;
     private readonly IManuscriptRepository _manuscripts;
     private readonly ICurrentUser _currentUser;
 
-    public GetAdminManuscriptsQueryHandler(
+    public GetMyManuscriptsQueryHandler(
         IManuscriptRepository manuscripts,
         ICurrentUser currentUser)
     {
@@ -31,33 +30,27 @@ public sealed class GetAdminManuscriptsQueryHandler
     }
 
     public async Task<PagedResult<AdminManuscriptListItemDto>> Handle(
-        GetAdminManuscriptsQuery request,
+        GetMyManuscriptsQuery request,
         CancellationToken cancellationToken)
     {
-        if (!ManuscriptAccess.CanViewAll(_currentUser))
-        {
-            throw new ForbiddenException("Editör kuyruğunu görme yetkiniz yok.");
-        }
-
         var page = request.Page < 1 ? 1 : request.Page;
         var pageSize = request.PageSize < 1
             ? 10
             : Math.Min(request.PageSize, MaxPageSize);
 
-        var includeReview = _currentUser.HasPermission(Permissions.Reviews.ViewAll);
-        var editorId = _currentUser.RequireUserId();
+        var authorId = _currentUser.RequireUserId();
 
-        var (manuscripts, totalCount) = await _manuscripts.ListEditorialPagedAsync(
+        var (manuscripts, totalCount) = await _manuscripts.ListMinePagedAsync(
             page,
             pageSize,
             request.Search,
             request.ResearchAreaId,
             request.Status,
-            editorId,
+            authorId,
             cancellationToken);
 
         var items = manuscripts
-            .Select(m => AdminManuscriptListMapping.ToListItem(m, includeReview))
+            .Select(m => AdminManuscriptListMapping.ToListItem(m, includeReview: false))
             .ToList();
 
         return new PagedResult<AdminManuscriptListItemDto>(items, page, pageSize, totalCount);

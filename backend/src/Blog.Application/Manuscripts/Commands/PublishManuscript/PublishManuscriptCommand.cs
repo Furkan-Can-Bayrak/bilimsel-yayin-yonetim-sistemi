@@ -1,6 +1,7 @@
 using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Common.Options;
+using Blog.Application.Manuscripts;
 using Blog.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Options;
@@ -13,6 +14,7 @@ public sealed class PublishManuscriptCommandHandler : IRequestHandler<PublishMan
 {
     private readonly IRepository<Manuscript> _manuscripts;
     private readonly IUnitOfWork _uow;
+    private readonly ICurrentUser _currentUser;
     private readonly IEmailService _email;
     private readonly INotificationService _notifications;
     private readonly EmailOptions _emailOptions;
@@ -20,12 +22,14 @@ public sealed class PublishManuscriptCommandHandler : IRequestHandler<PublishMan
     public PublishManuscriptCommandHandler(
         IRepository<Manuscript> manuscripts,
         IUnitOfWork uow,
+        ICurrentUser currentUser,
         IEmailService email,
         INotificationService notifications,
         IOptions<EmailOptions> emailOptions)
     {
         _manuscripts = manuscripts;
         _uow = uow;
+        _currentUser = currentUser;
         _email = email;
         _notifications = notifications;
         _emailOptions = emailOptions.Value;
@@ -40,6 +44,7 @@ public sealed class PublishManuscriptCommandHandler : IRequestHandler<PublishMan
             throw new NotFoundException($"Makale bulunamadı: {request.Id}");
         }
 
+        ManuscriptAccess.EnsureNotActingOnOwn(manuscript.AuthorId, _currentUser);
         ManuscriptAccess.ApplyTransition(() => manuscript.Publish(DateTime.UtcNow));
         await _uow.SaveChangesAsync(cancellationToken);
 

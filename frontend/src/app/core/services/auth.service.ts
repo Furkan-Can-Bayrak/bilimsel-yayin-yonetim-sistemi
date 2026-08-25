@@ -60,9 +60,11 @@ export class AuthService {
         !this.hasPermission(Permissions.Manuscripts.ViewAll)) {
       return '/admin/reviews';
     }
-    if (this.hasPermission(Permissions.Manuscripts.ViewAll) ||
-        this.hasPermission(Permissions.Manuscripts.Create)) {
+    if (this.hasPermission(Permissions.Manuscripts.ViewAll)) {
       return '/admin';
+    }
+    if (this.hasPermission(Permissions.Manuscripts.Create)) {
+      return '/admin/mine';
     }
     if (this.hasPermission(Permissions.Notifications.View)) {
       return '/admin/notifications';

@@ -24,6 +24,7 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
     private readonly IManuscriptRepository _manuscripts;
     private readonly IReviewRepository _reviews;
     private readonly IUserRepository _users;
+    private readonly ICurrentUser _currentUser;
     private readonly IUnitOfWork _uow;
     private readonly INotificationService _notifications;
 
@@ -31,12 +32,14 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
         IManuscriptRepository manuscripts,
         IReviewRepository reviews,
         IUserRepository users,
+        ICurrentUser currentUser,
         IUnitOfWork uow,
         INotificationService notifications)
     {
         _manuscripts = manuscripts;
         _reviews = reviews;
         _users = users;
+        _currentUser = currentUser;
         _uow = uow;
         _notifications = notifications;
     }
@@ -49,6 +52,8 @@ public sealed class AssignReviewCommandHandler : IRequestHandler<AssignReviewCom
         {
             throw new NotFoundException($"Makale bulunamadı: {request.ManuscriptId}");
         }
+
+        ManuscriptAccess.EnsureNotActingOnOwn(manuscript.AuthorId, _currentUser);
 
         if (request.ReviewerId == manuscript.AuthorId)
         {

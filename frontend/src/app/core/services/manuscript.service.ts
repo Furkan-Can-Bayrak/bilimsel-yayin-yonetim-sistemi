@@ -38,6 +38,12 @@ export class ManuscriptService {
     });
   }
 
+  getMyList(query: ManuscriptListQuery = {}): Observable<PagedResult<AdminManuscriptListItem>> {
+    return this.http.get<PagedResult<AdminManuscriptListItem>>(`${this.adminBaseUrl}/mine`, {
+      params: this.toParams(query),
+    });
+  }
+
   getAdminById(id: number): Observable<AdminManuscriptDetail> {
     return this.http.get<AdminManuscriptDetail>(`${this.adminBaseUrl}/${id}`);
   }

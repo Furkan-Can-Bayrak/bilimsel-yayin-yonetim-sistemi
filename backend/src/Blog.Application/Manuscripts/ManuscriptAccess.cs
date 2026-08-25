@@ -18,6 +18,26 @@ internal static class ManuscriptAccess
     public static bool CanView(int authorId, ICurrentUser user, bool isAssignedReviewer = false) =>
         CanViewAll(user) || user.UserId == authorId || isAssignedReviewer;
 
+    /// <summary>Başkasının taslağı editöre de görünmez; yazar kendi taslağını görür.</summary>
+    public static bool CanViewRecord(Manuscript manuscript, ICurrentUser user, bool isAssignedReviewer = false)
+    {
+        if (manuscript.Status == ManuscriptStatus.Draft && user.UserId != manuscript.AuthorId)
+        {
+            return false;
+        }
+
+        return CanView(manuscript.AuthorId, user, isAssignedReviewer);
+    }
+
+    /// <summary>Editör kendi makalesinde kabul/ret/hakem/yayın yapamaz.</summary>
+    public static void EnsureNotActingOnOwn(int authorId, ICurrentUser user)
+    {
+        if (user.UserId == authorId)
+        {
+            throw new ForbiddenException("Kendi makaleniz üzerinde editör işlemi yapamazsınız.");
+        }
+    }
+
     /// <summary>Kim: Update izni ve makalenin yazarı. ViewAll düzenleme hakkı vermez.</summary>
     public static bool CanUpdate(int authorId, ICurrentUser user) =>
         user.HasPermission(Permissions.Manuscripts.Update) &&
