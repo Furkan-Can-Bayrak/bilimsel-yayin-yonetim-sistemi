@@ -1,0 +1,37 @@
+<article class="ms-body" [class.compact]="compact()">
+  <header>
+    <p class="meta">
+      @if (authorName()) {
+        <span>{{ authorName() }}</span>
+      }
+      @if (researchAreaName()) {
+        @if (authorName()) {
+          <span>·</span>
+        }
+        <span>{{ researchAreaName() }}</span>
+      }
+      @if (publishedAt()) {
+        <span>· {{ publishedAt() | date: 'd MMMM y' }}</span>
+      }
+    </p>
+    <h1>{{ title() }}</h1>
+  </header>
+
+  <section class="ms-section">
+    <h2>Özet</h2>
+    @if (summary()?.trim()) {
+      <p class="summary">{{ summary() }}</p>
+    } @else {
+      <p class="muted empty-hint">Özet girilmemiş.</p>
+    }
+  </section>
+
+  <section class="ms-section">
+    <h2>İçerik</h2>
+    @if (content()?.trim()) {
+      <div class="content">{{ content() }}</div>
+    } @else {
+      <p class="muted empty-hint">İçerik girilmemiş.</p>
+    }
+  </section>
+</article>

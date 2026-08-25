@@ -4,12 +4,13 @@ import { ManuscriptDetailPage } from './features/manuscripts/manuscript-detail/m
 import { LoginPage } from './features/auth/login/login';
 import { AdminManuscriptList } from './features/admin/admin-manuscript-list/admin-manuscript-list';
 import { AdminManuscriptForm } from './features/admin/admin-manuscript-form/admin-manuscript-form';
+import { AdminManuscriptView } from './features/admin/admin-manuscript-view/admin-manuscript-view';
 import { AdminNotifications } from './features/admin/admin-notifications/admin-notifications';
 import { AdminReviewQueue } from './features/admin/admin-review-queue/admin-review-queue';
 import { AdminReviewForm } from './features/admin/admin-review-form/admin-review-form';
 import { AdminResearchAreas } from './features/admin/admin-research-areas/admin-research-areas';
 import { AdminUsers } from './features/admin/admin-users/admin-users';
-import { authGuard, permissionGuard } from './core/guards/auth.guard';
+import { authGuard, permissionGuard, permissionGuardAny } from './core/guards/auth.guard';
 import { Permissions } from './core/auth/permissions';
 
 export const routes: Routes = [
@@ -41,6 +42,11 @@ export const routes: Routes = [
         path: 'manuscripts/:id/edit',
         component: AdminManuscriptForm,
         canActivate: [permissionGuard(Permissions.Manuscripts.Update)],
+      },
+      {
+        path: 'manuscripts/:id',
+        component: AdminManuscriptView,
+        canActivate: [permissionGuardAny(Permissions.Manuscripts.ViewAll, Permissions.Manuscripts.Create)],
       },
       {
         path: 'reviews',

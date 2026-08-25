@@ -6,7 +6,6 @@
   } @else if (!review()) {
     <p class="error">{{ error() || 'Değerlendirme bulunamadı.' }}</p>
   } @else {
-    <h1>{{ review()!.manuscriptTitle }}</h1>
     <p class="muted author-line">
       @if (isSubmitted) {
         Rapor teslim edildi
@@ -15,23 +14,12 @@
       }
     </p>
 
-    <section class="ms-section">
-      <h2>Özet</h2>
-      @if (review()!.manuscriptSummary) {
-        <p class="summary">{{ review()!.manuscriptSummary }}</p>
-      } @else {
-        <p class="muted empty-hint">Özet girilmemiş.</p>
-      }
-    </section>
-
-    <section class="ms-section">
-      <h2>İçerik</h2>
-      @if (review()!.manuscriptContent?.trim()) {
-        <article class="manuscript">{{ review()!.manuscriptContent }}</article>
-      } @else {
-        <p class="muted empty-hint">İçerik girilmemiş.</p>
-      }
-    </section>
+    <app-manuscript-body
+      [title]="review()!.manuscriptTitle"
+      [summary]="review()!.manuscriptSummary"
+      [content]="review()!.manuscriptContent"
+      [compact]="true"
+    />
 
     <form class="form" (ngSubmit)="submit()">
       <fieldset class="reco" [disabled]="isSubmitted || submitting()">
@@ -57,11 +45,10 @@
               </svg>
             </span>
             <span class="reco-copy">
-              <strong>Kabul</strong>
-              <span>Makaleyi yayına uygun buluyorum</span>
+              <strong>Kabul önerisi</strong>
+              <span>Yayına uygun olduğunu düşünüyorum</span>
             </span>
           </label>
-
           <label class="reco-card reject" [class.selected]="recommendation === 'Reject'">
             <input
               type="radio"
@@ -81,36 +68,27 @@
               </svg>
             </span>
             <span class="reco-copy">
-              <strong>Ret</strong>
-              <span>Bu haliyle yayımlanmasını önermiyorum</span>
+              <strong>Ret önerisi</strong>
+              <span>Yayına uygun olmadığını düşünüyorum</span>
             </span>
           </label>
         </div>
       </fieldset>
 
       <label>
-        Gerekçe
-        <textarea
-          name="comments"
-          rows="6"
-          maxlength="4000"
-          [(ngModel)]="comments"
-          [disabled]="isSubmitted || submitting()"
-        ></textarea>
+        <span>Gerekçe</span>
+        <textarea name="comments" rows="6" [(ngModel)]="comments" [disabled]="isSubmitted"></textarea>
       </label>
 
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }
 
-      <div class="row">
-        @if (!isSubmitted) {
-          <button type="submit" class="btn primary" [disabled]="submitting()">
-            {{ submitting() ? 'Gönderiliyor…' : 'Raporu teslim et' }}
-          </button>
-        }
-        <a routerLink="/admin/reviews" class="btn ghost">Listeye dön</a>
-      </div>
+      @if (!isSubmitted) {
+        <button type="submit" class="btn primary" [disabled]="submitting()">
+          {{ submitting() ? 'Gönderiliyor…' : 'Raporu teslim et' }}
+        </button>
+      }
     </form>
   }
 </section>

@@ -1,0 +1,68 @@
+.ms-body header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.meta {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  color: var(--gold, var(--muted));
+  letter-spacing: 0.02em;
+}
+
+.ms-body h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.55rem, 3.5vw, 2.2rem);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.ms-section {
+  margin: 0 0 1.35rem;
+}
+
+.ms-section h2 {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.summary {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--body);
+  line-height: 1.5;
+}
+
+.content {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.75;
+  color: var(--body);
+  white-space: pre-wrap;
+}
+
+.ms-body.compact .content {
+  font-size: 1rem;
+  line-height: 1.55;
+  max-height: min(28rem, 55vh);
+  overflow: auto;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 80%, white);
+}
+
+.empty-hint {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: var(--muted);
+}

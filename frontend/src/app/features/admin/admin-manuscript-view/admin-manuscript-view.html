@@ -1,0 +1,65 @@
+<section class="page view-page">
+  <p class="back">
+    <a [routerLink]="backLink">← Listeye dön</a>
+  </p>
+
+  @if (loading()) {
+    <p class="muted">Yükleniyor…</p>
+  } @else if (error() && !manuscript()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (manuscript(); as item) {
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <p class="status-line">
+      <span class="badge" [class]="'badge badge-' + item.status">{{ statusLabels[item.status] }}</span>
+    </p>
+
+    <app-manuscript-body
+      [title]="item.title"
+      [authorName]="item.authorName"
+      [researchAreaName]="item.researchAreaName"
+      [publishedAt]="item.publishedAt"
+      [summary]="item.summary"
+      [content]="item.content"
+    />
+
+    @if (item.currentReview) {
+      <aside class="review-box">
+        <strong>Hakem raporu</strong>
+        <p class="muted">{{ item.currentReview.reviewerName }}</p>
+        @if (item.currentReview.submittedAtUtc) {
+          <p>
+            {{
+              item.currentReview.recommendation
+                ? recommendationLabels[item.currentReview.recommendation]
+                : 'Teslim edildi'
+            }}
+          </p>
+          @if (item.currentReview.comments) {
+            <p>{{ item.currentReview.comments }}</p>
+          }
+        } @else {
+          <p class="muted">Rapor bekleniyor.</p>
+        }
+      </aside>
+    }
+
+    <div class="view-actions">
+      @if (canEdit) {
+        <a [routerLink]="['/admin/manuscripts', item.id, 'edit']" class="btn ghost">Düzenle</a>
+      }
+      @if (canDecide) {
+        <button type="button" class="btn primary" [disabled]="busy()" (click)="accept()">Kabul</button>
+        <button type="button" class="btn danger" [disabled]="busy()" (click)="reject()">Ret</button>
+      }
+      @if (canPublish) {
+        <button type="button" class="btn ghost" [disabled]="busy()" (click)="publish()">Yayınla</button>
+      }
+      @if (canUnpublish) {
+        <button type="button" class="btn ghost" [disabled]="busy()" (click)="unpublish()">Yayından al</button>
+      }
+    </div>
+  }
+</section>

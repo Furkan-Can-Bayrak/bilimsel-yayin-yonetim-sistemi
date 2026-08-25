@@ -241,6 +241,8 @@ tr:last-child td {
   border: 1px solid var(--line);
   background: transparent;
   cursor: pointer;
+  color: inherit;
+  text-decoration: none;
 }
 
 .icon-btn svg {

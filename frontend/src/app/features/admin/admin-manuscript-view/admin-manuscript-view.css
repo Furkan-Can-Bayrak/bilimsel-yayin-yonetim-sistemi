@@ -1,0 +1,90 @@
+.view-page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.back {
+  margin: 0 0 1.25rem;
+}
+
+.back a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.back a:hover {
+  color: var(--accent);
+}
+
+.status-line {
+  margin: 0 0 1rem;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.badge-Draft {
+  background: #e8e4dc;
+  color: #5c5346;
+}
+
+.badge-Submitted {
+  background: #efe4c8;
+  color: #6b4f12;
+}
+
+.badge-UnderReview {
+  background: #e4dcf3;
+  color: #4b3480;
+}
+
+.badge-Accepted {
+  background: #dce8f5;
+  color: #1d4f91;
+}
+
+.badge-Rejected {
+  background: #f0d9d9;
+  color: #8a1f1f;
+}
+
+.badge-Published {
+  background: #d7ebe3;
+  color: #0f6e56;
+}
+
+.review-box {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 80%, white);
+}
+
+.review-box p {
+  margin: 0.35rem 0 0;
+}
+
+.view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  background: #f8ecec;
+  padding: 0.85rem 1rem;
+  border-radius: 4px;
+}

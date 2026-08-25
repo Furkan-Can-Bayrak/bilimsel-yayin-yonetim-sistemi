@@ -1,12 +1,12 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { ManuscriptService } from '../../../core/services/manuscript.service';
 import { ManuscriptDetail } from '../../../core/models/manuscript.model';
+import { ManuscriptBody } from '../../../shared/manuscript-body/manuscript-body';
 
 @Component({
   selector: 'app-manuscript-detail',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, ManuscriptBody],
   templateUrl: './manuscript-detail.html',
   styleUrl: './manuscript-detail.css',
 })

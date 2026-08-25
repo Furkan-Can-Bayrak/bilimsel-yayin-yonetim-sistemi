@@ -6,10 +6,11 @@ import {
   ReviewRecommendation,
 } from '../../../core/models/review.model';
 import { ReviewService } from '../../../core/services/review.service';
+import { ManuscriptBody } from '../../../shared/manuscript-body/manuscript-body';
 
 @Component({
   selector: 'app-admin-review-form',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, ManuscriptBody],
   templateUrl: './admin-review-form.html',
   styleUrl: './admin-review-form.css',
 })
