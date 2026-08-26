@@ -99,20 +99,22 @@
                         <span class="review-reviewer">Hakem: {{ review.reviewerName }}</span>
 
                         @if (review.submittedAtUtc) {
-                          <span
-                            class="reco-badge"
-                            [class.reco-accept]="review.recommendation === 'Accept'"
-                            [class.reco-reject]="review.recommendation === 'Reject'"
-                            [class.reco-done]="!review.recommendation"
-                          >
-                            @if (review.recommendation === 'Accept') {
-                              Hakem: Kabul önerisi
-                            } @else if (review.recommendation === 'Reject') {
-                              Hakem: Ret önerisi
-                            } @else {
-                              Rapor teslim edildi
-                            }
-                          </span>
+                          @if (manuscript.status === 'UnderReview') {
+                            <span
+                              class="reco-badge"
+                              [class.reco-accept]="review.recommendation === 'Accept'"
+                              [class.reco-reject]="review.recommendation === 'Reject'"
+                              [class.reco-done]="!review.recommendation"
+                            >
+                              @if (review.recommendation === 'Accept') {
+                                Hakem: Kabul önerisi
+                              } @else if (review.recommendation === 'Reject') {
+                                Hakem: Ret önerisi
+                              } @else {
+                                Rapor teslim edildi
+                              }
+                            </span>
+                          }
                         } @else {
                           <span class="pending-row">
                             <span class="reco-badge reco-pending">Rapor bekleniyor</span>
