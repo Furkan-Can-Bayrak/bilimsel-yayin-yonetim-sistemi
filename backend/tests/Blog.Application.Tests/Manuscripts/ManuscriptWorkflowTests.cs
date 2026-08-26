@@ -19,11 +19,29 @@ public class ManuscriptWorkflowTests
     public void Submit_from_rejected_sets_submitted()
     {
         var manuscript = Submitted();
-        manuscript.Reject();
+        manuscript.Reject("Yöntem eksik.");
 
         manuscript.Submit();
 
         Assert.Equal(ManuscriptStatus.Submitted, manuscript.Status);
+        Assert.Null(manuscript.RejectionReason);
+    }
+
+    [Fact]
+    public void Reject_sets_reason()
+    {
+        var manuscript = Submitted();
+
+        manuscript.Reject("Kaynaklar yetersiz.");
+
+        Assert.Equal(ManuscriptStatus.Rejected, manuscript.Status);
+        Assert.Equal("Kaynaklar yetersiz.", manuscript.RejectionReason);
+    }
+
+    [Fact]
+    public void Reject_without_reason_throws()
+    {
+        Assert.Throws<InvalidOperationException>(() => Submitted().Reject("  "));
     }
 
     [Fact]

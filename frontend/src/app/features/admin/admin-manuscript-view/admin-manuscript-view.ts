@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   AdminManuscriptDetail,
@@ -14,7 +15,7 @@ import { ManuscriptBody } from '../../../shared/manuscript-body/manuscript-body'
 
 @Component({
   selector: 'app-admin-manuscript-view',
-  imports: [RouterLink, ManuscriptBody],
+  imports: [RouterLink, FormsModule, ManuscriptBody],
   templateUrl: './admin-manuscript-view.html',
   styleUrl: './admin-manuscript-view.css',
 })
@@ -31,6 +32,9 @@ export class AdminManuscriptView implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly busy = signal(false);
+  readonly rejectOpen = signal(false);
+  rejectReason = '';
+  rejectError: string | null = null;
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -96,8 +100,45 @@ export class AdminManuscriptView implements OnInit {
     this.run((id) => this.manuscriptsApi.accept(id), 'Kabul edilemedi.');
   }
 
-  reject(): void {
-    this.run((id) => this.manuscriptsApi.reject(id), 'Reddedilemedi.');
+  openReject(): void {
+    this.rejectOpen.set(true);
+    this.rejectReason = '';
+    this.rejectError = null;
+  }
+
+  closeReject(): void {
+    this.rejectOpen.set(false);
+    this.rejectReason = '';
+    this.rejectError = null;
+  }
+
+  confirmReject(): void {
+    const item = this.manuscript();
+    const reason = this.rejectReason.trim();
+    if (!item) {
+      return;
+    }
+
+    if (!reason) {
+      this.rejectError = 'Red gerekçesi yazın.';
+      return;
+    }
+
+    this.busy.set(true);
+    this.error.set(null);
+    this.rejectError = null;
+    this.manuscriptsApi.reject(item.id, reason).subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.closeReject();
+        this.load(item.id);
+      },
+      error: (err: unknown) => {
+        this.busy.set(false);
+        const detail = (err as { error?: { detail?: string } })?.error?.detail;
+        this.rejectError = detail ?? 'Reddedilemedi.';
+      },
+    });
   }
 
   withdrawReview(review: ReviewSummary): void {

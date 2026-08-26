@@ -105,6 +105,7 @@ public sealed class GetManuscriptByIdQueryHandler
                     manuscript.Author.FirstName,
                     manuscript.Author.LastName),
             reviews.FirstOrDefault(),
-            reviews);
+            reviews,
+            manuscript.RejectionReason);
     }
 }

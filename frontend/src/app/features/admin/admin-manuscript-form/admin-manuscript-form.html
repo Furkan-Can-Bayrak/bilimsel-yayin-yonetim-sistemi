@@ -7,6 +7,13 @@
     </p>
   }
 
+  @if (isEdit && status() === 'Rejected' && rejectionReason()) {
+    <aside class="rejection-box">
+      <strong>Red gerekçesi</strong>
+      <p>{{ rejectionReason() }}</p>
+    </aside>
+  }
+
   @if (isEdit && canViewReviews && reviews().length > 0) {
     <aside class="review-box">
       <strong>Rapor geçmişi</strong>
@@ -148,7 +155,7 @@
             title="Ret"
             aria-label="Ret"
             [disabled]="submitting()"
-            (click)="reject()"
+            (click)="openReject()"
           >
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path
@@ -208,6 +215,40 @@
           (click)="assignReviewer()"
         >
           Ata
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (rejectOpen()) {
+  <div class="modal-backdrop" (click)="closeReject()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title" (click)="$event.stopPropagation()">
+      <h2 id="reject-title">Makaleyi reddet</h2>
+      @if (rejectError) {
+        <p class="error">{{ rejectError }}</p>
+      }
+      <label>
+        Red gerekçesi
+        <textarea
+          name="rejectReason"
+          rows="5"
+          maxlength="2000"
+          [(ngModel)]="rejectReason"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="Eksik yöntem, kaynak, dil, kapsam…"
+          autofocus
+        ></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" (click)="closeReject()">İptal</button>
+        <button
+          type="button"
+          class="btn danger"
+          [disabled]="submitting() || !rejectReason.trim()"
+          (click)="confirmReject()"
+        >
+          Reddet
         </button>
       </div>
     </div>

@@ -152,6 +152,15 @@
                       </div>
                     }
                   }
+                  @if (manuscript.status === 'Rejected' && manuscript.rejectionReason) {
+                    <button
+                      type="button"
+                      class="btn ghost tiny"
+                      (click)="openReason(manuscript)"
+                    >
+                      Red gerekçesi
+                    </button>
+                  }
                 </div>
               </td>
               <td>
@@ -199,7 +208,7 @@
                     title="Ret"
                     aria-label="Ret"
                     [disabled]="busyId() === manuscript.id"
-                    (click)="reject(manuscript)"
+                    (click)="openReject(manuscript)"
                   >
                     <svg viewBox="0 0 16 16" aria-hidden="true">
                       <path
@@ -373,6 +382,56 @@
       }
       <div class="modal-actions">
         <button type="button" class="btn ghost" (click)="closeReport()">Kapat</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (rejectTarget(); as target) {
+  <div class="modal-backdrop" (click)="closeReject()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title" (click)="$event.stopPropagation()">
+      <h2 id="reject-title">Makaleyi reddet</h2>
+      <p class="modal-lead">{{ target.title }}</p>
+
+      @if (rejectError) {
+        <p class="error">{{ rejectError }}</p>
+      }
+
+      <label class="field">
+        <span>Red gerekçesi</span>
+        <textarea
+          name="rejectReason"
+          rows="5"
+          maxlength="2000"
+          [(ngModel)]="rejectReason"
+          placeholder="Eksik yöntem, kaynak, dil, kapsam…"
+          autofocus
+        ></textarea>
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" (click)="closeReject()">İptal</button>
+        <button
+          type="button"
+          class="btn danger"
+          [disabled]="busyId() === target.id || !rejectReason.trim()"
+          (click)="confirmReject()"
+        >
+          Reddet
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (reasonTarget(); as reason) {
+  <div class="modal-backdrop" (click)="closeReason()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reason-title" (click)="$event.stopPropagation()">
+      <h2 id="reason-title">Red gerekçesi</h2>
+      <p class="modal-lead">{{ reason.title }}</p>
+      <div class="report-body">{{ reason.rejectionReason }}</div>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" (click)="closeReason()">Kapat</button>
       </div>
     </div>
   </div>

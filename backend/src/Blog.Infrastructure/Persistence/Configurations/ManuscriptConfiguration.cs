@@ -26,6 +26,9 @@ public class ManuscriptConfiguration : IEntityTypeConfiguration<Manuscript>
         builder.Property(m => m.Summary)
             .HasMaxLength(500);
 
+        builder.Property(m => m.RejectionReason)
+            .HasMaxLength(2000);
+
         builder.Property(m => m.Status)
             .HasConversion<int>()
             .IsRequired();

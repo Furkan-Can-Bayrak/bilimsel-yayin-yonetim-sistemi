@@ -13,6 +13,8 @@ public sealed class Manuscript : ISoftDeletable
     public string? Summary { get; set; }
     public DateTime? PublishedAt { get; private set; }
     public ManuscriptStatus Status { get; private set; } = ManuscriptStatus.Draft;
+    /// <summary>Editör reddederken yazar için bırakılan gerekçe. Yeniden gönderimde temizlenir.</summary>
+    public string? RejectionReason { get; private set; }
     /// <summary>Taslakta boş kalabilir; değerlendirmeye göndermeden önce zorunlu.</summary>
     public int? ResearchAreaId { get; set; }
     public ResearchArea? ResearchArea { get; set; }
@@ -34,6 +36,7 @@ public sealed class Manuscript : ISoftDeletable
         }
 
         Status = ManuscriptStatus.Submitted;
+        RejectionReason = null;
     }
 
     public void AssignReviewer()
@@ -66,16 +69,23 @@ public sealed class Manuscript : ISoftDeletable
         }
 
         Status = ManuscriptStatus.Accepted;
+        RejectionReason = null;
     }
 
-    public void Reject()
+    public void Reject(string reason)
     {
         if (Status is not (ManuscriptStatus.Submitted or ManuscriptStatus.UnderReview))
         {
             throw new InvalidOperationException("Yalnızca gönderilmiş veya incelemedeki makale reddedilebilir.");
         }
 
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new InvalidOperationException("Red gerekçesi zorunludur.");
+        }
+
         Status = ManuscriptStatus.Rejected;
+        RejectionReason = reason.Trim();
     }
 
     public void Publish(DateTime utcNow)

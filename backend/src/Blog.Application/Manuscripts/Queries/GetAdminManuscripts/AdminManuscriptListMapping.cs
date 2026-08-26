@@ -27,7 +27,8 @@ internal static class AdminManuscriptListMapping
                     manuscript.Author.FirstName,
                     manuscript.Author.LastName),
             reviews.FirstOrDefault(),
-            reviews);
+            reviews,
+            manuscript.RejectionReason);
     }
 
     public static IReadOnlyList<ReviewSummaryDto> MapReviews(Manuscript manuscript) =>

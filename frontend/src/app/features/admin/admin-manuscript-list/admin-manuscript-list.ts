@@ -62,6 +62,10 @@ export class AdminManuscriptList implements OnInit {
 
   readonly assignTarget = signal<AdminManuscriptListItem | null>(null);
   readonly reportTarget = signal<{ title: string; reviews: ReviewSummary[] } | null>(null);
+  readonly rejectTarget = signal<AdminManuscriptListItem | null>(null);
+  readonly reasonTarget = signal<AdminManuscriptListItem | null>(null);
+  rejectReason = '';
+  rejectError: string | null = null;
   readonly modalCandidates = signal<ReviewerCandidate[]>([]);
   readonly candidatesLoading = signal(false);
   readonly modalError = signal<string | null>(null);
@@ -216,8 +220,56 @@ export class AdminManuscriptList implements OnInit {
     this.run(manuscript.id, this.manuscriptsApi.accept(manuscript.id), 'Kabul edilemedi.');
   }
 
-  reject(manuscript: AdminManuscriptListItem): void {
-    this.run(manuscript.id, this.manuscriptsApi.reject(manuscript.id), 'Reddedilemedi.');
+  openReject(manuscript: AdminManuscriptListItem): void {
+    this.rejectTarget.set(manuscript);
+    this.rejectReason = '';
+    this.rejectError = null;
+  }
+
+  closeReject(): void {
+    this.rejectTarget.set(null);
+    this.rejectReason = '';
+    this.rejectError = null;
+  }
+
+  confirmReject(): void {
+    const manuscript = this.rejectTarget();
+    const reason = this.rejectReason.trim();
+    if (!manuscript) {
+      return;
+    }
+
+    if (!reason) {
+      this.rejectError = 'Red gerekçesi yazın.';
+      return;
+    }
+
+    this.busyId.set(manuscript.id);
+    this.rejectError = null;
+    this.manuscriptsApi.reject(manuscript.id, reason).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.closeReject();
+        this.reload();
+      },
+      error: (err: unknown) => {
+        this.busyId.set(null);
+        const detail = (err as { error?: { detail?: string } })?.error?.detail;
+        this.rejectError = detail ?? 'Reddedilemedi.';
+      },
+    });
+  }
+
+  openReason(manuscript: AdminManuscriptListItem): void {
+    if (!manuscript.rejectionReason) {
+      return;
+    }
+
+    this.reasonTarget.set(manuscript);
+  }
+
+  closeReason(): void {
+    this.reasonTarget.set(null);
   }
 
   openAssign(manuscript: AdminManuscriptListItem): void {

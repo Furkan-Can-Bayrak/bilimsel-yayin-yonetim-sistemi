@@ -16,6 +16,13 @@
       <span class="badge" [class]="'badge badge-' + item.status">{{ statusLabels[item.status] }}</span>
     </p>
 
+    @if (item.status === 'Rejected' && item.rejectionReason) {
+      <aside class="rejection-box">
+        <strong>Red gerekçesi</strong>
+        <p>{{ item.rejectionReason }}</p>
+      </aside>
+    }
+
     <app-manuscript-body
       [title]="item.title"
       [authorName]="item.authorName"
@@ -78,7 +85,7 @@
       }
       @if (canDecide) {
         <button type="button" class="btn primary" [disabled]="busy()" (click)="accept()">Kabul</button>
-        <button type="button" class="btn danger" [disabled]="busy()" (click)="reject()">Ret</button>
+        <button type="button" class="btn danger" [disabled]="busy()" (click)="openReject()">Ret</button>
       }
       @if (canPublish) {
         <button type="button" class="btn ghost" [disabled]="busy()" (click)="publish()">Yayınla</button>
@@ -89,3 +96,36 @@
     </div>
   }
 </section>
+
+@if (rejectOpen()) {
+  <div class="modal-backdrop" (click)="closeReject()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title" (click)="$event.stopPropagation()">
+      <h2 id="reject-title">Makaleyi reddet</h2>
+      @if (rejectError) {
+        <p class="error">{{ rejectError }}</p>
+      }
+      <label>
+        Red gerekçesi
+        <textarea
+          name="rejectReason"
+          rows="5"
+          maxlength="2000"
+          [(ngModel)]="rejectReason"
+          placeholder="Eksik yöntem, kaynak, dil, kapsam…"
+          autofocus
+        ></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" (click)="closeReject()">İptal</button>
+        <button
+          type="button"
+          class="btn danger"
+          [disabled]="busy() || !rejectReason.trim()"
+          (click)="confirmReject()"
+        >
+          Reddet
+        </button>
+      </div>
+    </div>
+  </div>
+}

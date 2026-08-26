@@ -2,11 +2,21 @@ using Blog.Application.Common.Exceptions;
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts;
 using Blog.Domain.Entities;
+using FluentValidation;
 using MediatR;
 
 namespace Blog.Application.Manuscripts.Commands.RejectManuscript;
 
-public sealed record RejectManuscriptCommand(int Id) : IRequest;
+public sealed record RejectManuscriptCommand(int Id, string Reason) : IRequest;
+
+public sealed class RejectManuscriptCommandValidator : AbstractValidator<RejectManuscriptCommand>
+{
+    public RejectManuscriptCommandValidator()
+    {
+        RuleFor(x => x.Id).GreaterThan(0);
+        RuleFor(x => x.Reason).NotEmpty().MaximumLength(2000);
+    }
+}
 
 public sealed class RejectManuscriptCommandHandler : IRequestHandler<RejectManuscriptCommand>
 {
@@ -37,13 +47,13 @@ public sealed class RejectManuscriptCommandHandler : IRequestHandler<RejectManus
         }
 
         ManuscriptAccess.EnsureNotActingOnOwn(manuscript.AuthorId, _currentUser);
-        ManuscriptAccess.ApplyTransition(manuscript.Reject);
+        ManuscriptAccess.ApplyTransition(() => manuscript.Reject(request.Reason));
         await _uow.SaveChangesAsync(cancellationToken);
 
         await _notifications.NotifyUsersAsync(
             [manuscript.AuthorId],
             "Makale reddedildi",
-            $"\"{manuscript.Title}\" reddedildi. Düzeltip yeniden gönderebilirsiniz.",
+            $"\"{manuscript.Title}\" reddedildi. Gerekçe: {manuscript.RejectionReason}",
             manuscript.Id,
             cancellationToken);
     }

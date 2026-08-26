@@ -14,12 +14,23 @@
   margin: 0 0 1.1rem;
 }
 
-.review-box {
+.review-box,
+.rejection-box {
   margin: 0 0 1.25rem;
   padding: 0.85rem 1rem;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: color-mix(in srgb, var(--surface) 80%, white);
+}
+
+.rejection-box {
+  border-color: #e2b4b4;
+  background: #f8ecec;
+}
+
+.rejection-box p {
+  margin: 0.4rem 0 0;
+  white-space: pre-wrap;
 }
 
 .review-box p {
@@ -249,13 +260,24 @@
   font-size: 0.9rem;
 }
 
-.modal select {
+.modal select,
+.modal textarea {
   font: inherit;
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface);
   color: var(--ink);
+}
+
+.modal textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+}
+
+.btn.danger {
+  background: #9b1c1c;
+  color: #fff;
 }
 
 .modal-actions {

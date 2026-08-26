@@ -371,8 +371,20 @@ tr:last-child td {
   margin-bottom: 1rem;
 }
 
-.modal .field select {
+.modal .field select,
+.modal .field textarea {
   min-width: 100%;
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.modal .field textarea {
+  resize: vertical;
+  min-height: 6.5rem;
 }
 
 .modal-actions {

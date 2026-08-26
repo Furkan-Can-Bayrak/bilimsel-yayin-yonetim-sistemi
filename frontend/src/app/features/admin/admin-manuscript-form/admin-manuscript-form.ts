@@ -42,8 +42,12 @@ export class AdminManuscriptForm implements OnInit {
   readonly authorId = signal<number | null>(null);
   readonly currentReview = signal<ReviewSummary | null>(null);
   readonly reviews = signal<ReviewSummary[]>([]);
+  readonly rejectionReason = signal<string | null>(null);
   readonly candidates = signal<ReviewerCandidate[]>([]);
   readonly assignOpen = signal(false);
+  readonly rejectOpen = signal(false);
+  rejectReason = '';
+  rejectError: string | null = null;
   readonly candidatesLoading = signal(false);
   selectedReviewerId: number | null = null;
 
@@ -263,8 +267,46 @@ export class AdminManuscriptForm implements OnInit {
     this.runWorkflow(this.manuscriptsApi.accept.bind(this.manuscriptsApi), 'Kabul edildi', 'Accepted');
   }
 
-  reject(): void {
-    this.runWorkflow(this.manuscriptsApi.reject.bind(this.manuscriptsApi), 'Reddedildi', 'Rejected');
+  openReject(): void {
+    this.rejectOpen.set(true);
+    this.rejectReason = '';
+    this.rejectError = null;
+  }
+
+  closeReject(): void {
+    this.rejectOpen.set(false);
+    this.rejectReason = '';
+    this.rejectError = null;
+  }
+
+  confirmReject(): void {
+    const id = this.editId();
+    const reason = this.rejectReason.trim();
+    if (!id) {
+      return;
+    }
+
+    if (!reason) {
+      this.rejectError = 'Red gerekçesi yazın.';
+      return;
+    }
+
+    this.submitting.set(true);
+    this.error.set(null);
+    this.rejectError = null;
+    this.manuscriptsApi.reject(id, reason).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.status.set('Rejected');
+        this.rejectionReason.set(reason);
+        this.applyLock();
+        this.closeReject();
+      },
+      error: (err: unknown) => {
+        this.submitting.set(false);
+        this.rejectError = this.readError(err) ?? 'Reddedilemedi.';
+      },
+    });
   }
 
   openAssign(): void {
@@ -392,6 +434,7 @@ export class AdminManuscriptForm implements OnInit {
         this.authorId.set(manuscript.authorId);
         this.currentReview.set(manuscript.currentReview);
         this.reviews.set(manuscript.reviews ?? []);
+        this.rejectionReason.set(manuscript.rejectionReason);
         this.applyLock();
         this.loading.set(false);
       },

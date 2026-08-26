@@ -72,8 +72,8 @@ export class ManuscriptService {
     return this.http.post<void>(`${this.baseUrl}/${id}/accept`, {});
   }
 
-  reject(id: number): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/reject`, {});
+  reject(id: number, reason: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/reject`, { reason });
   }
 
   delete(id: number): Observable<void> {

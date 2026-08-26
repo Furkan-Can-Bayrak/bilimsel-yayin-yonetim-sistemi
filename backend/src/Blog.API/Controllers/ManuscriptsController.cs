@@ -98,9 +98,14 @@ public class ManuscriptsController : ControllerBase
 
     [HasPermission(Permissions.Manuscripts.Decide)]
     [HttpPost("{id:int}/reject")]
-    public async Task<IActionResult> Reject(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Reject(
+        int id,
+        [FromBody] RejectManuscriptRequest? body,
+        CancellationToken cancellationToken)
     {
-        await _mediator.Send(new RejectManuscriptCommand(id), cancellationToken);
+        await _mediator.Send(
+            new RejectManuscriptCommand(id, body?.Reason ?? string.Empty),
+            cancellationToken);
         return NoContent();
     }
 
@@ -135,3 +140,5 @@ public sealed record UpdateManuscriptRequest(
     string? Summary,
     int? ResearchAreaId,
     bool SubmitForReview = false);
+
+public sealed record RejectManuscriptRequest(string Reason);
