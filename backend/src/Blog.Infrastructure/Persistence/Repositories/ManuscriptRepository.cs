@@ -131,7 +131,7 @@ public sealed class ManuscriptRepository : Repository<Manuscript>, IManuscriptRe
             .ThenInclude(r => r.Reviewer)
             .OrderBy(m =>
                 m.Status == ManuscriptStatus.UnderReview
-                    && m.Reviews.Any(r => r.SubmittedAtUtc != null)
+                    && !m.Reviews.Any(r => r.SubmittedAtUtc == null)
                     ? 0 :
                 m.Status == ManuscriptStatus.Submitted ? 1 :
                 m.Status == ManuscriptStatus.Accepted ? 2 :
