@@ -133,10 +133,10 @@ public sealed class ManuscriptRepository : Repository<Manuscript>, IManuscriptRe
                 m.Status == ManuscriptStatus.UnderReview
                     && m.Reviews.Any(r => r.SubmittedAtUtc != null)
                     ? 0 :
-                m.Status == ManuscriptStatus.UnderReview ? 1 :
-                m.Status == ManuscriptStatus.Submitted ? 2 :
-                m.Status == ManuscriptStatus.Published ? 3 :
-                m.Status == ManuscriptStatus.Accepted ? 4 :
+                m.Status == ManuscriptStatus.Submitted ? 1 :
+                m.Status == ManuscriptStatus.Accepted ? 2 :
+                m.Status == ManuscriptStatus.UnderReview ? 3 :
+                m.Status == ManuscriptStatus.Published ? 4 :
                 m.Status == ManuscriptStatus.Rejected ? 5 :
                 6)
             .ThenByDescending(m => m.Id)
