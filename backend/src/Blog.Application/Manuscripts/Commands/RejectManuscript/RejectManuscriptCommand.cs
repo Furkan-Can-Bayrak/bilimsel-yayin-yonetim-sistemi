@@ -21,17 +21,20 @@ public sealed class RejectManuscriptCommandValidator : AbstractValidator<RejectM
 public sealed class RejectManuscriptCommandHandler : IRequestHandler<RejectManuscriptCommand>
 {
     private readonly IRepository<Manuscript> _manuscripts;
+    private readonly IReviewRepository _reviews;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
     private readonly INotificationService _notifications;
 
     public RejectManuscriptCommandHandler(
         IRepository<Manuscript> manuscripts,
+        IReviewRepository reviews,
         IUnitOfWork uow,
         ICurrentUser currentUser,
         INotificationService notifications)
     {
         _manuscripts = manuscripts;
+        _reviews = reviews;
         _uow = uow;
         _currentUser = currentUser;
         _notifications = notifications;
@@ -47,6 +50,8 @@ public sealed class RejectManuscriptCommandHandler : IRequestHandler<RejectManus
         }
 
         ManuscriptAccess.EnsureNotActingOnOwn(manuscript.AuthorId, _currentUser);
+        var hasOpenReview = await _reviews.HasOpenForManuscriptAsync(manuscript.Id, cancellationToken);
+        ManuscriptAccess.EnsureNoOpenReview(hasOpenReview);
         ManuscriptAccess.ApplyTransition(() => manuscript.Reject(request.Reason));
         await _uow.SaveChangesAsync(cancellationToken);
 

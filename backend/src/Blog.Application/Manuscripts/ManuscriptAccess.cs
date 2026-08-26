@@ -64,6 +64,16 @@ internal static class ManuscriptAccess
         return query.Where(_ => false);
     }
 
+    /// <summary>Açık hakem ataması varken kabul/ret yok; rapor beklenir veya atama geri alınır.</summary>
+    public static void EnsureNoOpenReview(bool hasOpenReview)
+    {
+        if (hasOpenReview)
+        {
+            throw new ConflictException(
+                "Hakem incelemesi sürerken makale kabul veya reddedilemez.");
+        }
+    }
+
     public static void ApplyTransition(Action transition)
     {
         try

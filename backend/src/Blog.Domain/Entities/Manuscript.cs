@@ -68,6 +68,7 @@ public sealed class Manuscript : ISoftDeletable
             throw new InvalidOperationException("Yalnızca gönderilmiş veya incelemedeki makale kabul edilebilir.");
         }
 
+        EnsureNoOpenReview();
         Status = ManuscriptStatus.Accepted;
         RejectionReason = null;
     }
@@ -84,8 +85,19 @@ public sealed class Manuscript : ISoftDeletable
             throw new InvalidOperationException("Red gerekçesi zorunludur.");
         }
 
+        EnsureNoOpenReview();
         Status = ManuscriptStatus.Rejected;
         RejectionReason = reason.Trim();
+    }
+
+    /// <summary>Açık hakem ataması varken editör karar veremez; raporu bekler veya atamayı geri alır.</summary>
+    private void EnsureNoOpenReview()
+    {
+        if (Reviews.Any(r => !r.IsSubmitted))
+        {
+            throw new InvalidOperationException(
+                "Hakem incelemesi sürerken makale kabul veya reddedilemez.");
+        }
     }
 
     public void Publish(DateTime utcNow)

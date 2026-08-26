@@ -60,11 +60,16 @@ export class AdminManuscriptView implements OnInit {
 
   get canDecide(): boolean {
     const item = this.manuscript();
-    return (
-      this.auth.hasPermission(Permissions.Manuscripts.Decide) &&
-      !this.isOwn &&
-      (item?.status === 'Submitted' || item?.status === 'UnderReview')
-    );
+    if (
+      !this.auth.hasPermission(Permissions.Manuscripts.Decide) ||
+      this.isOwn ||
+      (item?.status !== 'Submitted' && item?.status !== 'UnderReview')
+    ) {
+      return false;
+    }
+
+    const review = item.currentReview;
+    return review == null || review.submittedAtUtc != null;
   }
 
   get canPublish(): boolean {

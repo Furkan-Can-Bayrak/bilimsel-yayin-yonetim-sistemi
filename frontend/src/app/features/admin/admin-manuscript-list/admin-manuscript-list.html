@@ -186,7 +186,7 @@
                     {{ assignLabel(manuscript) }}
                   </button>
                 }
-                @if (isEditorPanel && canDecide && !isOwn(manuscript) && (manuscript.status === 'Submitted' || manuscript.status === 'UnderReview')) {
+                @if (isEditorPanel && canDecideOn(manuscript)) {
                   <button
                     type="button"
                     class="icon-btn accept"

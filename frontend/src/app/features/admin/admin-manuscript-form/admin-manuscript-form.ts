@@ -100,9 +100,16 @@ export class AdminManuscriptForm implements OnInit {
   }
 
   get canDecide(): boolean {
-    return this.auth.hasPermission(Permissions.Manuscripts.Decide) &&
-      !this.isOwn &&
-      (this.status() === 'Submitted' || this.status() === 'UnderReview');
+    if (
+      !this.auth.hasPermission(Permissions.Manuscripts.Decide) ||
+      this.isOwn ||
+      (this.status() !== 'Submitted' && this.status() !== 'UnderReview')
+    ) {
+      return false;
+    }
+
+    const review = this.currentReview();
+    return review == null || review.submittedAtUtc != null;
   }
 
   get canAssign(): boolean {

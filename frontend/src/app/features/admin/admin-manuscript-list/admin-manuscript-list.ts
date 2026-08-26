@@ -137,6 +137,19 @@ export class AdminManuscriptList implements OnInit {
     return this.reviewsOf(manuscript).some((review) => review.submittedAtUtc != null);
   }
 
+  canDecideOn(manuscript: AdminManuscriptListItem): boolean {
+    if (!this.canDecide || this.isOwn(manuscript)) {
+      return false;
+    }
+
+    if (manuscript.status !== 'Submitted' && manuscript.status !== 'UnderReview') {
+      return false;
+    }
+
+    const review = manuscript.currentReview;
+    return review == null || review.submittedAtUtc != null;
+  }
+
   canWithdraw(manuscript: AdminManuscriptListItem): boolean {
     const review = manuscript.currentReview;
     return (

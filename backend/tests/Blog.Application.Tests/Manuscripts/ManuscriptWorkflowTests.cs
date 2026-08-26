@@ -143,6 +143,40 @@ public class ManuscriptWorkflowTests
     }
 
     [Fact]
+    public void Accept_with_open_review_throws()
+    {
+        var manuscript = Submitted();
+        manuscript.AssignReviewer();
+        manuscript.Reviews.Add(new Review { AssignedAtUtc = DateTime.UtcNow });
+
+        Assert.Throws<InvalidOperationException>(() => manuscript.Accept());
+    }
+
+    [Fact]
+    public void Reject_with_open_review_throws()
+    {
+        var manuscript = Submitted();
+        manuscript.AssignReviewer();
+        manuscript.Reviews.Add(new Review { AssignedAtUtc = DateTime.UtcNow });
+
+        Assert.Throws<InvalidOperationException>(() => manuscript.Reject("Kapsam dar."));
+    }
+
+    [Fact]
+    public void Accept_after_review_submitted_succeeds()
+    {
+        var manuscript = Submitted();
+        manuscript.AssignReviewer();
+        var review = new Review { AssignedAtUtc = DateTime.UtcNow };
+        review.SubmitReport(ReviewRecommendation.Accept, "Uygun.", DateTime.UtcNow);
+        manuscript.Reviews.Add(review);
+
+        manuscript.Accept();
+
+        Assert.Equal(ManuscriptStatus.Accepted, manuscript.Status);
+    }
+
+    [Fact]
     public void Review_cannot_be_submitted_twice()
     {
         var review = new Review { AssignedAtUtc = DateTime.UtcNow };
