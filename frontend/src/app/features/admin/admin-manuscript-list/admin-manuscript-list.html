@@ -54,12 +54,16 @@
     </div>
   </form>
 
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
   @if (loading()) {
     <p class="muted">Yükleniyor…</p>
-  } @else if (error()) {
-    <p class="error">{{ error() }}</p>
   } @else if (manuscripts().length === 0) {
-    <p class="muted">Sonuç bulunamadı.</p>
+    @if (!error()) {
+      <p class="muted">Sonuç bulunamadı.</p>
+    }
   } @else {
     <p class="result-meta">{{ totalCount() }} makale · sayfa {{ page() }} / {{ totalPages() }}</p>
 

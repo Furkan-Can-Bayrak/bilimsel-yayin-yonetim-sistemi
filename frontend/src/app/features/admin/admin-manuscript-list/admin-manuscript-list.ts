@@ -182,9 +182,11 @@ export class AdminManuscriptList implements OnInit {
     this.reload();
   }
 
-  reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
+  reload(options?: { silent?: boolean }): void {
+    if (!options?.silent) {
+      this.loading.set(true);
+      this.error.set(null);
+    }
 
     const query = {
       page: this.page(),
@@ -210,7 +212,9 @@ export class AdminManuscriptList implements OnInit {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set('Makaleler yüklenemedi. Oturumunuzun süresi dolmuş olabilir.');
+          if (!options?.silent) {
+            this.error.set('Makaleler yüklenemedi. Oturumunuzun süresi dolmuş olabilir.');
+          }
           this.loading.set(false);
         },
       });
@@ -363,6 +367,7 @@ export class AdminManuscriptList implements OnInit {
         this.busyId.set(null);
         const detail = (err as { error?: { detail?: string } })?.error?.detail;
         this.error.set(detail ?? failMessage);
+        this.reload({ silent: true });
       },
     });
   }

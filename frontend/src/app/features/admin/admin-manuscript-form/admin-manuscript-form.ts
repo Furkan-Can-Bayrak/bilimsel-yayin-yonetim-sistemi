@@ -358,6 +358,7 @@ export class AdminManuscriptForm implements OnInit {
       error: (err: unknown) => {
         this.submitting.set(false);
         this.error.set(this.readError(err) ?? 'Atama geri alınamadı.');
+        this.loadManuscript(id);
       },
     });
   }

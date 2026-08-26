@@ -162,6 +162,7 @@ export class AdminManuscriptView implements OnInit {
         this.busy.set(false);
         const detail = (err as { error?: { detail?: string } })?.error?.detail;
         this.error.set(detail ?? 'Atama geri alınamadı.');
+        this.load(item.id);
       },
     });
   }
