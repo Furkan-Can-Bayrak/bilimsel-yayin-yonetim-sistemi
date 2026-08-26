@@ -7,23 +7,49 @@
     </p>
   }
 
-  @if (isEdit && canViewReviews && currentReview()) {
+  @if (isEdit && canViewReviews && reviews().length > 0) {
     <aside class="review-box">
-      <strong>Hakem raporu</strong>
-      <p class="muted">{{ currentReview()!.reviewerName }}</p>
-      @if (currentReview()!.submittedAtUtc) {
-        <p>
-          {{
-            currentReview()!.recommendation
-              ? recommendationLabels[currentReview()!.recommendation!]
-              : 'Teslim edildi'
-          }}
-        </p>
-        @if (currentReview()!.comments) {
-          <p>{{ currentReview()!.comments }}</p>
-        }
-      } @else {
-        <p class="muted">Rapor bekleniyor.</p>
+      <strong>Rapor geçmişi</strong>
+      @for (review of reviews(); track review.id) {
+        <article class="review-item">
+          <p class="muted">{{ review.reviewerName }}</p>
+          @if (review.submittedAtUtc) {
+            <p>
+              {{
+                review.recommendation
+                  ? recommendationLabels[review.recommendation]
+                  : 'Teslim edildi'
+              }}
+            </p>
+            @if (review.comments) {
+              <p>{{ review.comments }}</p>
+            }
+          } @else {
+            <p class="muted pending-row">
+              Rapor bekleniyor.
+              @if (canWithdrawAssignment) {
+                <button
+                  type="button"
+                  class="withdraw-btn"
+                  title="Hakem atamasını geri al"
+                  aria-label="Hakem atamasını geri al"
+                  [disabled]="submitting()"
+                  (click)="withdrawReview(review)"
+                >
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      d="M4 4l8 8M12 4l-8 8"
+                    />
+                  </svg>
+                </button>
+              }
+            </p>
+          }
+        </article>
       }
     </aside>
   }
@@ -93,7 +119,7 @@
         }
         @if (isEdit && canAssign) {
           <button type="button" class="btn ghost" [disabled]="submitting()" (click)="openAssign()">
-            Hakem ata
+            {{ assignLabel }}
           </button>
         }
         @if (isEdit && canDecide) {

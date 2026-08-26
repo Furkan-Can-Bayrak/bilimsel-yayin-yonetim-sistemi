@@ -72,6 +72,46 @@
   margin: 0.35rem 0 0;
 }
 
+.review-item + .review-item {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.pending-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.withdraw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #8a1f1f;
+  cursor: pointer;
+}
+
+.withdraw-btn svg {
+  width: 0.72rem;
+  height: 0.72rem;
+}
+
+.withdraw-btn:hover:not(:disabled) {
+  background: #f0d9d9;
+}
+
+.withdraw-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .view-actions {
   display: flex;
   flex-wrap: wrap;

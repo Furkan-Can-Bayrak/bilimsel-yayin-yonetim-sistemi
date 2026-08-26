@@ -1,5 +1,6 @@
 using Blog.Application.Common.Interfaces;
 using Blog.Application.Manuscripts.Dtos;
+using Blog.Application.Manuscripts.Queries.GetAdminManuscripts;
 using Blog.Domain.Authorization;
 using Blog.Domain.Entities;
 using Blog.Domain.Enums;
@@ -52,26 +53,40 @@ public sealed class GetManuscriptByIdQueryHandler
         }
 
         var dto = Map(manuscript, includeReview);
+        return ApplyReviewVisibility(dto, manuscript);
+    }
 
-        if (!ManuscriptAccess.CanViewAll(_currentUser)
-            && dto.CurrentReview is not null
-            && dto.CurrentReview.ReviewerId != _currentUser.UserId)
+    private AdminManuscriptDetailDto ApplyReviewVisibility(
+        AdminManuscriptDetailDto dto,
+        Manuscript manuscript)
+    {
+        if (_currentUser.HasPermission(Permissions.Reviews.ViewAll))
         {
-            return dto with { CurrentReview = null };
+            return dto;
         }
 
-        if (!ManuscriptAccess.CanViewAll(_currentUser)
-            && !_currentUser.HasPermission(Permissions.Reviews.ViewAll)
-            && _currentUser.UserId == manuscript.AuthorId)
+        if (_currentUser.UserId == manuscript.AuthorId)
         {
-            return dto with { CurrentReview = null };
+            return dto with { CurrentReview = null, Reviews = [] };
         }
 
-        return dto;
+        var own = dto.Reviews
+            .Where(r => r.ReviewerId == _currentUser.UserId)
+            .ToList();
+
+        return dto with
+        {
+            CurrentReview = own.FirstOrDefault(),
+            Reviews = own
+        };
     }
 
     private static AdminManuscriptDetailDto Map(Manuscript manuscript, bool includeReview)
     {
+        var reviews = includeReview
+            ? AdminManuscriptListMapping.MapReviews(manuscript)
+            : [];
+
         return new AdminManuscriptDetailDto(
             manuscript.Id,
             manuscript.Title,
@@ -89,32 +104,7 @@ public sealed class GetManuscriptByIdQueryHandler
                     manuscript.Author.AcademicTitle,
                     manuscript.Author.FirstName,
                     manuscript.Author.LastName),
-            includeReview ? MapCurrentReview(manuscript) : null);
-    }
-
-    private static ReviewSummaryDto? MapCurrentReview(Manuscript manuscript)
-    {
-        var review = manuscript.Reviews
-            .OrderByDescending(r => r.AssignedAtUtc)
-            .FirstOrDefault();
-
-        if (review is null)
-        {
-            return null;
-        }
-
-        return new ReviewSummaryDto(
-            review.Id,
-            review.ReviewerId,
-            review.Reviewer is null
-                ? string.Empty
-                : AcademicTitles.FormatName(
-                    review.Reviewer.AcademicTitle,
-                    review.Reviewer.FirstName,
-                    review.Reviewer.LastName),
-            review.AssignedAtUtc,
-            review.SubmittedAtUtc,
-            review.Recommendation,
-            review.Comments);
+            reviews.FirstOrDefault(),
+            reviews);
     }
 }

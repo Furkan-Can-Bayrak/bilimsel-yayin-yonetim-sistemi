@@ -109,15 +109,39 @@
                               Rapor teslim edildi
                             }
                           </span>
+                        } @else {
+                          <span class="pending-row">
+                            <span class="reco-badge reco-pending">Rapor bekleniyor</span>
+                            @if (canWithdraw(manuscript)) {
+                              <button
+                                type="button"
+                                class="withdraw-btn"
+                                title="Hakem atamasını geri al"
+                                aria-label="Hakem atamasını geri al"
+                                [disabled]="busyId() === manuscript.id"
+                                (click)="withdraw(manuscript)"
+                              >
+                                <svg viewBox="0 0 16 16" aria-hidden="true">
+                                  <path
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    d="M4 4l8 8M12 4l-8 8"
+                                  />
+                                </svg>
+                              </button>
+                            }
+                          </span>
+                        }
+                        @if (hasReviewHistory(manuscript)) {
                           <button
                             type="button"
                             class="btn ghost tiny"
                             (click)="openReport(manuscript)"
                           >
-                            Rapora bak
+                            Rapor geçmişi
                           </button>
-                        } @else {
-                          <span class="reco-badge reco-pending">Rapor bekleniyor</span>
                         }
                       </div>
                     } @else if (
@@ -139,14 +163,14 @@
               </td>
               <td class="actions">
                 <div class="actions-row">
-                @if (isEditorPanel && canAssign && !isOwn(manuscript) && manuscript.status === 'Submitted') {
+                @if (isEditorPanel && canAssignTo(manuscript)) {
                   <button
                     type="button"
                     class="btn ghost"
                     [disabled]="busyId() === manuscript.id"
                     (click)="openAssign(manuscript)"
                   >
-                    Hakem ata
+                    {{ assignLabel(manuscript) }}
                   </button>
                 }
                 @if (isEditorPanel && canDecide && !isOwn(manuscript) && (manuscript.status === 'Submitted' || manuscript.status === 'UnderReview')) {
@@ -327,15 +351,26 @@
       aria-labelledby="report-title"
       (click)="$event.stopPropagation()"
     >
-      <h2 id="report-title">Hakem raporu</h2>
+      <h2 id="report-title">Rapor geçmişi</h2>
       <p class="modal-lead">{{ report.title }}</p>
-      <p class="report-meta">{{ report.review.reviewerName }}</p>
-      @if (report.review.recommendation === 'Accept') {
-        <span class="reco-badge reco-accept">Hakem: Kabul önerisi</span>
-      } @else if (report.review.recommendation === 'Reject') {
-        <span class="reco-badge reco-reject">Hakem: Ret önerisi</span>
+      @for (review of report.reviews; track review.id) {
+        <article class="report-item">
+          <p class="report-meta">
+            {{ review.reviewerName }}
+            · {{ review.assignedAtUtc | date: 'd MMM y' }}
+          </p>
+          @if (review.submittedAtUtc) {
+            @if (review.recommendation === 'Accept') {
+              <span class="reco-badge reco-accept">Hakem: Kabul önerisi</span>
+            } @else if (review.recommendation === 'Reject') {
+              <span class="reco-badge reco-reject">Hakem: Ret önerisi</span>
+            }
+            <div class="report-body">{{ review.comments || 'Gerekçe yazılmamış.' }}</div>
+          } @else {
+            <span class="reco-badge reco-pending">Rapor bekleniyor</span>
+          }
+        </article>
       }
-      <div class="report-body">{{ report.review.comments || 'Gerekçe yazılmamış.' }}</div>
       <div class="modal-actions">
         <button type="button" class="btn ghost" (click)="closeReport()">Kapat</button>
       </div>

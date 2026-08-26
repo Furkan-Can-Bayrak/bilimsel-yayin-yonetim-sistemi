@@ -8,6 +8,8 @@ internal static class AdminManuscriptListMapping
 {
     public static AdminManuscriptListItemDto ToListItem(Manuscript manuscript, bool includeReview)
     {
+        var reviews = includeReview ? MapReviews(manuscript) : [];
+
         return new AdminManuscriptListItemDto(
             manuscript.Id,
             manuscript.Title,
@@ -24,21 +26,18 @@ internal static class AdminManuscriptListMapping
                     manuscript.Author.AcademicTitle,
                     manuscript.Author.FirstName,
                     manuscript.Author.LastName),
-            includeReview ? MapCurrentReview(manuscript) : null);
+            reviews.FirstOrDefault(),
+            reviews);
     }
 
-    private static ReviewSummaryDto? MapCurrentReview(Manuscript manuscript)
-    {
-        var review = manuscript.Reviews
+    public static IReadOnlyList<ReviewSummaryDto> MapReviews(Manuscript manuscript) =>
+        manuscript.Reviews
             .OrderByDescending(r => r.AssignedAtUtc)
-            .FirstOrDefault();
+            .Select(MapReview)
+            .ToList();
 
-        if (review is null)
-        {
-            return null;
-        }
-
-        return new ReviewSummaryDto(
+    public static ReviewSummaryDto MapReview(Review review) =>
+        new(
             review.Id,
             review.ReviewerId,
             review.Reviewer is null
@@ -51,5 +50,4 @@ internal static class AdminManuscriptListMapping
             review.SubmittedAtUtc,
             review.Recommendation,
             review.Comments);
-    }
 }

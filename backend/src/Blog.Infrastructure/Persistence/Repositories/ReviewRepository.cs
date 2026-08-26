@@ -24,6 +24,13 @@ public sealed class ReviewRepository : Repository<Review>, IReviewRepository
             r => r.ManuscriptId == manuscriptId && r.SubmittedAtUtc == null,
             cancellationToken);
 
+    public Task<bool> HasSubmittedForManuscriptAsync(
+        int manuscriptId,
+        CancellationToken cancellationToken = default) =>
+        Set.AnyAsync(
+            r => r.ManuscriptId == manuscriptId && r.SubmittedAtUtc != null,
+            cancellationToken);
+
     public async Task<IReadOnlyList<Review>> ListByReviewerAsync(
         int reviewerId,
         CancellationToken cancellationToken = default)

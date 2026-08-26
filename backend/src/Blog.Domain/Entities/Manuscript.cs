@@ -38,12 +38,24 @@ public sealed class Manuscript : ISoftDeletable
 
     public void AssignReviewer()
     {
-        if (Status != ManuscriptStatus.Submitted)
+        if (Status is not (ManuscriptStatus.Submitted or ManuscriptStatus.UnderReview))
         {
-            throw new InvalidOperationException("Hakem yalnızca gönderilmiş makaleye atanabilir.");
+            throw new InvalidOperationException(
+                "Hakem yalnızca gönderilmiş veya incelemedeki makaleye atanabilir.");
         }
 
         Status = ManuscriptStatus.UnderReview;
+    }
+
+    public void ReturnToSubmitted()
+    {
+        if (Status != ManuscriptStatus.UnderReview)
+        {
+            throw new InvalidOperationException(
+                "Yalnızca incelemedeki makale gönderildi durumuna alınabilir.");
+        }
+
+        Status = ManuscriptStatus.Submitted;
     }
 
     public void Accept()

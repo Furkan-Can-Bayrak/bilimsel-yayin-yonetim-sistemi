@@ -71,6 +71,49 @@ public class ManuscriptWorkflowTests
     }
 
     [Fact]
+    public void ReturnToSubmitted_from_under_review_sets_submitted()
+    {
+        var manuscript = Submitted();
+        manuscript.AssignReviewer();
+
+        manuscript.ReturnToSubmitted();
+
+        Assert.Equal(ManuscriptStatus.Submitted, manuscript.Status);
+    }
+
+    [Fact]
+    public void ReturnToSubmitted_from_submitted_throws()
+    {
+        Assert.Throws<InvalidOperationException>(() => Submitted().ReturnToSubmitted());
+    }
+
+    [Fact]
+    public void AssignReviewer_from_under_review_stays_under_review()
+    {
+        var manuscript = Submitted();
+        manuscript.AssignReviewer();
+
+        manuscript.AssignReviewer();
+
+        Assert.Equal(ManuscriptStatus.UnderReview, manuscript.Status);
+    }
+
+    [Fact]
+    public void AssignReviewer_from_accepted_throws()
+    {
+        var manuscript = Submitted();
+        manuscript.Accept();
+
+        Assert.Throws<InvalidOperationException>(() => manuscript.AssignReviewer());
+    }
+
+    [Fact]
+    public void AssignReviewer_from_draft_throws()
+    {
+        Assert.Throws<InvalidOperationException>(() => new Manuscript().AssignReviewer());
+    }
+
+    [Fact]
     public void Accept_from_under_review_succeeds()
     {
         var manuscript = Submitted();

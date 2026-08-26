@@ -33,7 +33,8 @@ public sealed record AdminManuscriptListItemDto(
     string ResearchAreaName,
     int AuthorId,
     string AuthorName,
-    ReviewSummaryDto? CurrentReview);
+    ReviewSummaryDto? CurrentReview,
+    IReadOnlyList<ReviewSummaryDto> Reviews);
 
 public sealed record AdminManuscriptDetailDto(
     int Id,
@@ -47,7 +48,8 @@ public sealed record AdminManuscriptDetailDto(
     string ResearchAreaName,
     int AuthorId,
     string AuthorName,
-    ReviewSummaryDto? CurrentReview);
+    ReviewSummaryDto? CurrentReview,
+    IReadOnlyList<ReviewSummaryDto> Reviews);
 
 public sealed record ReviewSummaryDto(
     int Id,

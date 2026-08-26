@@ -70,6 +70,7 @@ export interface AdminManuscriptListItem {
   authorId: number;
   authorName: string;
   currentReview: ReviewSummary | null;
+  reviews: ReviewSummary[];
 }
 
 export interface AdminManuscriptDetail {
@@ -85,6 +86,7 @@ export interface AdminManuscriptDetail {
   authorId: number;
   authorName: string;
   currentReview: ReviewSummary | null;
+  reviews: ReviewSummary[];
 }
 
 export interface CreateManuscriptRequest {

@@ -41,6 +41,7 @@ export class AdminManuscriptForm implements OnInit {
   readonly authorName = signal<string | null>(null);
   readonly authorId = signal<number | null>(null);
   readonly currentReview = signal<ReviewSummary | null>(null);
+  readonly reviews = signal<ReviewSummary[]>([]);
   readonly candidates = signal<ReviewerCandidate[]>([]);
   readonly assignOpen = signal(false);
   readonly candidatesLoading = signal(false);
@@ -101,13 +102,33 @@ export class AdminManuscriptForm implements OnInit {
   }
 
   get canAssign(): boolean {
-    return this.auth.hasPermission(Permissions.Reviews.Assign) &&
-      !this.isOwn &&
-      this.status() === 'Submitted';
+    if (!this.auth.hasPermission(Permissions.Reviews.Assign) || this.isOwn) {
+      return false;
+    }
+
+    const status = this.status();
+    if (status === 'Submitted') {
+      return true;
+    }
+
+    if (status !== 'UnderReview') {
+      return false;
+    }
+
+    const current = this.currentReview();
+    return current == null || current.submittedAtUtc != null;
+  }
+
+  get assignLabel(): string {
+    return this.reviews().length > 0 ? 'Başka hakem ata' : 'Hakem ata';
   }
 
   get canViewReviews(): boolean {
     return this.auth.hasPermission(Permissions.Reviews.ViewAll);
+  }
+
+  get canWithdrawAssignment(): boolean {
+    return this.auth.hasPermission(Permissions.Reviews.Assign) && !this.isOwn;
   }
 
   get canPublish(): boolean {
@@ -275,6 +296,30 @@ export class AdminManuscriptForm implements OnInit {
     this.selectedReviewerId = null;
   }
 
+  withdrawReview(review: ReviewSummary): void {
+    const id = this.editId();
+    if (!id || review.submittedAtUtc) {
+      return;
+    }
+
+    if (!confirm('Bu hakem atamasını geri almak istediğinize emin misiniz?')) {
+      return;
+    }
+
+    this.submitting.set(true);
+    this.error.set(null);
+    this.reviewsApi.withdraw(review.id).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.loadManuscript(id);
+      },
+      error: (err: unknown) => {
+        this.submitting.set(false);
+        this.error.set(this.readError(err) ?? 'Atama geri alınamadı.');
+      },
+    });
+  }
+
   assignReviewer(): void {
     const id = this.editId();
     const reviewerId = this.selectedReviewerId;
@@ -346,6 +391,7 @@ export class AdminManuscriptForm implements OnInit {
         this.authorName.set(manuscript.authorName);
         this.authorId.set(manuscript.authorId);
         this.currentReview.set(manuscript.currentReview);
+        this.reviews.set(manuscript.reviews ?? []);
         this.applyLock();
         this.loading.set(false);
       },

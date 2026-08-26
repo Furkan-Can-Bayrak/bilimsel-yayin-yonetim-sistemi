@@ -12,6 +12,10 @@ public interface IReviewRepository : IRepository<Review>
         int manuscriptId,
         CancellationToken cancellationToken = default);
 
+    Task<bool> HasSubmittedForManuscriptAsync(
+        int manuscriptId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Review>> ListByReviewerAsync(
         int reviewerId,
         CancellationToken cancellationToken = default);

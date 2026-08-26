@@ -3,11 +3,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   AdminManuscriptDetail,
   MANUSCRIPT_STATUS_LABELS,
+  ReviewSummary,
 } from '../../../core/models/manuscript.model';
 import { REVIEW_RECOMMENDATION_LABELS } from '../../../core/models/review.model';
 import { Permissions } from '../../../core/auth/permissions';
 import { AuthService } from '../../../core/services/auth.service';
 import { ManuscriptService } from '../../../core/services/manuscript.service';
+import { ReviewService } from '../../../core/services/review.service';
 import { ManuscriptBody } from '../../../shared/manuscript-body/manuscript-body';
 
 @Component({
@@ -19,6 +21,7 @@ import { ManuscriptBody } from '../../../shared/manuscript-body/manuscript-body'
 export class AdminManuscriptView implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly manuscriptsApi = inject(ManuscriptService);
+  private readonly reviewsApi = inject(ReviewService);
   private readonly auth = inject(AuthService);
 
   readonly statusLabels = MANUSCRIPT_STATUS_LABELS;
@@ -85,12 +88,41 @@ export class AdminManuscriptView implements OnInit {
     );
   }
 
+  get canWithdrawAssignment(): boolean {
+    return this.auth.hasPermission(Permissions.Reviews.Assign) && !this.isOwn;
+  }
+
   accept(): void {
     this.run((id) => this.manuscriptsApi.accept(id), 'Kabul edilemedi.');
   }
 
   reject(): void {
     this.run((id) => this.manuscriptsApi.reject(id), 'Reddedilemedi.');
+  }
+
+  withdrawReview(review: ReviewSummary): void {
+    const item = this.manuscript();
+    if (!item || review.submittedAtUtc) {
+      return;
+    }
+
+    if (!confirm('Bu hakem atamasını geri almak istediğinize emin misiniz?')) {
+      return;
+    }
+
+    this.busy.set(true);
+    this.error.set(null);
+    this.reviewsApi.withdraw(review.id).subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.load(item.id);
+      },
+      error: (err: unknown) => {
+        this.busy.set(false);
+        const detail = (err as { error?: { detail?: string } })?.error?.detail;
+        this.error.set(detail ?? 'Atama geri alınamadı.');
+      },
+    });
   }
 
   publish(): void {

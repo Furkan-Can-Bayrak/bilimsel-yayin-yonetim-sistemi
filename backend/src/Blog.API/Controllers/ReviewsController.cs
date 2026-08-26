@@ -1,6 +1,7 @@
 using Blog.API.Infrastructure.Authorization;
 using Blog.Application.Reviews.Commands.AssignReview;
 using Blog.Application.Reviews.Commands.SubmitReview;
+using Blog.Application.Reviews.Commands.WithdrawReview;
 using Blog.Application.Reviews.Queries.GetMyReviews;
 using Blog.Application.Reviews.Queries.GetReviewById;
 using Blog.Application.Reviews.Queries.GetReviewCandidates;
@@ -55,6 +56,14 @@ public class ReviewsController : ControllerBase
     {
         var id = await _mediator.Send(command, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
+    }
+
+    [HasPermission(Permissions.Reviews.Assign)]
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Withdraw(int id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new WithdrawReviewCommand(id), cancellationToken);
+        return NoContent();
     }
 
     [HasPermission(Permissions.Reviews.Submit)]

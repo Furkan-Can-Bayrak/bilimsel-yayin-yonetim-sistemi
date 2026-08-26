@@ -34,6 +34,10 @@ export class ReviewService {
     return this.http.post<{ id: number }>(this.baseUrl, { manuscriptId, reviewerId });
   }
 
+  withdraw(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
   submit(id: number, body: SubmitReviewRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/submit`, body);
   }

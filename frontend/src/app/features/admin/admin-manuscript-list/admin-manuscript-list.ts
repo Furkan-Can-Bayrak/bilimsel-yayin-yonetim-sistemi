@@ -61,7 +61,7 @@ export class AdminManuscriptList implements OnInit {
   statusFilter: ManuscriptStatus | '' = '';
 
   readonly assignTarget = signal<AdminManuscriptListItem | null>(null);
-  readonly reportTarget = signal<{ title: string; review: ReviewSummary } | null>(null);
+  readonly reportTarget = signal<{ title: string; reviews: ReviewSummary[] } | null>(null);
   readonly modalCandidates = signal<ReviewerCandidate[]>([]);
   readonly candidatesLoading = signal(false);
   readonly modalError = signal<string | null>(null);
@@ -98,6 +98,63 @@ export class AdminManuscriptList implements OnInit {
       this.isOwn(manuscript) &&
       (manuscript.status === 'Draft' || manuscript.status === 'Rejected')
     );
+  }
+
+  reviewsOf(manuscript: AdminManuscriptListItem): ReviewSummary[] {
+    if (manuscript.reviews?.length) {
+      return manuscript.reviews;
+    }
+
+    return manuscript.currentReview ? [manuscript.currentReview] : [];
+  }
+
+  canAssignTo(manuscript: AdminManuscriptListItem): boolean {
+    if (!this.canAssign || this.isOwn(manuscript)) {
+      return false;
+    }
+
+    if (manuscript.status === 'Submitted') {
+      return true;
+    }
+
+    if (manuscript.status !== 'UnderReview') {
+      return false;
+    }
+
+    const current = manuscript.currentReview;
+    return current == null || current.submittedAtUtc != null;
+  }
+
+  assignLabel(manuscript: AdminManuscriptListItem): string {
+    return this.reviewsOf(manuscript).length > 0 ? 'Başka hakem ata' : 'Hakem ata';
+  }
+
+  hasReviewHistory(manuscript: AdminManuscriptListItem): boolean {
+    return this.reviewsOf(manuscript).some((review) => review.submittedAtUtc != null);
+  }
+
+  canWithdraw(manuscript: AdminManuscriptListItem): boolean {
+    const review = manuscript.currentReview;
+    return (
+      this.isEditorPanel &&
+      this.canAssign &&
+      !this.isOwn(manuscript) &&
+      review != null &&
+      review.submittedAtUtc == null
+    );
+  }
+
+  withdraw(manuscript: AdminManuscriptListItem): void {
+    const review = manuscript.currentReview;
+    if (!review || review.submittedAtUtc) {
+      return;
+    }
+
+    if (!confirm('Bu hakem atamasını geri almak istediğinize emin misiniz?')) {
+      return;
+    }
+
+    this.run(manuscript.id, this.reviewsApi.withdraw(review.id), 'Atama geri alınamadı.');
   }
 
   applyFilters(): void {
@@ -190,12 +247,12 @@ export class AdminManuscriptList implements OnInit {
   }
 
   openReport(manuscript: AdminManuscriptListItem): void {
-    const review = manuscript.currentReview;
-    if (!review) {
+    const reviews = this.reviewsOf(manuscript);
+    if (reviews.length === 0) {
       return;
     }
 
-    this.reportTarget.set({ title: manuscript.title, review });
+    this.reportTarget.set({ title: manuscript.title, reviews });
   }
 
   closeReport(): void {
