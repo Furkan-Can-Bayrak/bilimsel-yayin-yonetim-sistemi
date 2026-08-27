@@ -4,7 +4,6 @@ using Blog.Application.Manuscripts.Commands.CreateManuscript;
 using Blog.Application.Manuscripts.Commands.DeleteManuscript;
 using Blog.Application.Manuscripts.Commands.PublishManuscript;
 using Blog.Application.Manuscripts.Commands.RejectManuscript;
-using Blog.Application.Manuscripts.Commands.SubmitManuscript;
 using Blog.Application.Manuscripts.Commands.UnpublishManuscript;
 using Blog.Application.Manuscripts.Commands.UpdateManuscript;
 using Blog.Application.Manuscripts.Queries.GetManuscriptBySlug;
@@ -77,14 +76,6 @@ public class ManuscriptsController : ControllerBase
                 body.SubmitForReview),
             cancellationToken);
 
-        return NoContent();
-    }
-
-    [HasPermission(Permissions.Manuscripts.Submit)]
-    [HttpPost("{id:int}/submit")]
-    public async Task<IActionResult> Submit(int id, CancellationToken cancellationToken)
-    {
-        await _mediator.Send(new SubmitManuscriptCommand(id), cancellationToken);
         return NoContent();
     }
 

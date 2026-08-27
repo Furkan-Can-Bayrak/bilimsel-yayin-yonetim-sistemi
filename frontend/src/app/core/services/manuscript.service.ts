@@ -64,10 +64,6 @@ export class ManuscriptService {
     return this.http.post<void>(`${this.baseUrl}/${id}/unpublish`, {});
   }
 
-  submit(id: number): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/submit`, {});
-  }
-
   accept(id: number): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/accept`, {});
   }

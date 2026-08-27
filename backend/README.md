@@ -66,7 +66,6 @@ Visual Studio: **Blog.API** sağ tık → **Manage User Secrets**. Bu dosya `%AP
 | POST | `/api/auth/login` | Anonim |
 | GET | `/api/manuscripts?page&pageSize&search&researchAreaId`, `/api/manuscripts/{slug}` | Anonim |
 | GET | `/api/admin/manuscripts?page&pageSize&search&researchAreaId&status`, `/api/admin/manuscripts/{id}` | Giriş; ViewAll ise tümü, değilse kendi makaleleri |
-| POST | `/api/manuscripts/{id}/submit` | `Manuscript.Submit` (yazar) |
 | POST | `/api/manuscripts/{id}/accept`, `/api/manuscripts/{id}/reject` | `Manuscript.Decide` |
 | POST | `/api/manuscripts/{id}/publish` | `Manuscript.Publish` (yalnızca Accepted) |
 | POST | `/api/manuscripts/{id}/unpublish` | `Manuscript.Unpublish` (Published → Accepted) |
